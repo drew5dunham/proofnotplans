@@ -1,0 +1,101 @@
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Plus, X } from 'lucide-react';
+import { CategoryIcon, getCategoryLabel } from './CategoryIcon';
+import { useAppStore } from '@/lib/store';
+import type { Category } from '@/types';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+
+const categories: Category[] = ['fitness', 'learning', 'creative', 'health', 'work', 'personal'];
+
+export function AddGoalForm() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [goalName, setGoalName] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<Category>('personal');
+  const { addGoal, activeGoals, currentUser } = useAppStore();
+
+  const canAddMore = currentUser.isPremium || activeGoals.length < 3;
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!goalName.trim()) return;
+
+    const success = addGoal(goalName.trim(), selectedCategory);
+    if (success) {
+      setGoalName('');
+      setSelectedCategory('personal');
+      setIsOpen(false);
+    }
+  };
+
+  if (!isOpen) {
+    return (
+      <button
+        onClick={() => setIsOpen(true)}
+        className="w-full p-4 border border-dashed border-border hover:border-foreground/30 transition-colors flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground"
+      >
+        <Plus size={18} />
+        <span className="text-sm font-medium">Add Goal</span>
+        {!currentUser.isPremium && (
+          <span className="text-xs ml-1">({activeGoals.length}/3)</span>
+        )}
+      </button>
+    );
+  }
+
+  return (
+    <motion.form
+      initial={{ opacity: 0, height: 0 }}
+      animate={{ opacity: 1, height: 'auto' }}
+      exit={{ opacity: 0, height: 0 }}
+      onSubmit={handleSubmit}
+      className="border border-border p-4 space-y-4"
+    >
+      <div className="flex items-center justify-between">
+        <h3 className="font-semibold">New Goal</h3>
+        <button
+          type="button"
+          onClick={() => setIsOpen(false)}
+          className="p-1 text-muted-foreground hover:text-foreground"
+        >
+          <X size={18} />
+        </button>
+      </div>
+
+      <Input
+        type="text"
+        placeholder="What will you complete?"
+        value={goalName}
+        onChange={(e) => setGoalName(e.target.value)}
+        className="w-full"
+        autoFocus
+      />
+
+      <div>
+        <p className="text-xs text-muted-foreground mb-2">Category</p>
+        <div className="grid grid-cols-3 gap-2">
+          {categories.map((cat) => (
+            <button
+              key={cat}
+              type="button"
+              onClick={() => setSelectedCategory(cat)}
+              className={`p-2 border text-xs font-medium flex items-center justify-center gap-1.5 transition-colors ${
+                selectedCategory === cat
+                  ? 'border-accent bg-accent/10 text-foreground'
+                  : 'border-border text-muted-foreground hover:border-foreground/20'
+              }`}
+            >
+              <CategoryIcon category={cat} size={12} />
+              {getCategoryLabel(cat)}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <Button type="submit" className="w-full" disabled={!goalName.trim()}>
+        Add Goal
+      </Button>
+    </motion.form>
+  );
+}
