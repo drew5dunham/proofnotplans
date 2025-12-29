@@ -1,11 +1,13 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Check, X, Camera, Type } from 'lucide-react';
+import { Check, X, Camera, Type, Loader2, Image as ImageIcon } from 'lucide-react';
 import { CategoryIcon, getCategoryLabel } from './CategoryIcon';
 import { useAppStore } from '@/lib/store';
+import { supabase } from '@/integrations/supabase/client';
 import type { Goal } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
   DialogContent,
@@ -21,17 +23,131 @@ export function GoalCard({ goal }: GoalCardProps) {
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [caption, setCaption] = useState('');
   const [addCaption, setAddCaption] = useState(false);
+  const [addPhoto, setAddPhoto] = useState(false);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { completeGoal, removeGoal } = useAppStore();
+  const { toast } = useToast();
 
-  const handleComplete = () => {
-    completeGoal(
-      goal.id,
-      addCaption && caption ? 'text' : undefined,
-      addCaption && caption ? caption : undefined
-    );
-    setShowCompleteModal(false);
-    setCaption('');
-    setAddCaption(false);
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: 'Invalid file',
+        description: 'Please select an image file.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: 'File too large',
+        description: 'Please select an image under 5MB.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setPhotoFile(file);
+    setPhotoPreview(URL.createObjectURL(file));
+    setAddPhoto(true);
+  };
+
+  const clearPhoto = () => {
+    setPhotoFile(null);
+    if (photoPreview) {
+      URL.revokeObjectURL(photoPreview);
+    }
+    setPhotoPreview(null);
+    setAddPhoto(false);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const uploadPhoto = async (): Promise<string | null> => {
+    if (!photoFile) return null;
+
+    const fileExt = photoFile.name.split('.').pop();
+    const fileName = `${goal.id}-${Date.now()}.${fileExt}`;
+
+    const { data, error } = await supabase.storage
+      .from('goal-proofs')
+      .upload(fileName, photoFile, {
+        cacheControl: '3600',
+        upsert: false,
+      });
+
+    if (error) {
+      console.error('Upload error:', error);
+      throw error;
+    }
+
+    // Get public URL
+    const { data: urlData } = supabase.storage
+      .from('goal-proofs')
+      .getPublicUrl(data.path);
+
+    return urlData.publicUrl;
+  };
+
+  const handleComplete = async () => {
+    setIsUploading(true);
+
+    try {
+      let mediaUrl: string | undefined;
+      let mediaType: 'photo' | 'text' | undefined;
+
+      if (photoFile) {
+        mediaUrl = (await uploadPhoto()) ?? undefined;
+        mediaType = 'photo';
+      } else if (addCaption && caption) {
+        mediaType = 'text';
+      }
+
+      completeGoal(
+        goal.id,
+        mediaType,
+        addCaption && caption ? caption : undefined,
+        mediaUrl
+      );
+
+      toast({
+        title: 'Goal completed!',
+        description: 'Your completion has been posted.',
+      });
+
+      // Reset state
+      setShowCompleteModal(false);
+      setCaption('');
+      setAddCaption(false);
+      clearPhoto();
+    } catch (error) {
+      console.error('Error completing goal:', error);
+      toast({
+        title: 'Upload failed',
+        description: 'Could not upload photo. Try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleModalClose = (open: boolean) => {
+    if (!open) {
+      clearPhoto();
+      setCaption('');
+      setAddCaption(false);
+    }
+    setShowCompleteModal(open);
   };
 
   return (
@@ -69,8 +185,18 @@ export function GoalCard({ goal }: GoalCardProps) {
         </Button>
       </motion.div>
 
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        onChange={handlePhotoSelect}
+        className="hidden"
+      />
+
       {/* Completion Modal */}
-      <Dialog open={showCompleteModal} onOpenChange={setShowCompleteModal}>
+      <Dialog open={showCompleteModal} onOpenChange={handleModalClose}>
         <DialogContent className="max-w-[340px]">
           <DialogHeader>
             <DialogTitle className="text-left">Complete Goal</DialogTitle>
@@ -91,7 +217,9 @@ export function GoalCard({ goal }: GoalCardProps) {
 
             <div className="flex gap-2">
               <button
-                onClick={() => setAddCaption(!addCaption)}
+                onClick={() => {
+                  setAddCaption(!addCaption);
+                }}
                 className={`flex-1 p-3 border transition-colors flex flex-col items-center gap-1 ${
                   addCaption ? 'border-accent bg-accent/10' : 'border-border hover:border-foreground/20'
                 }`}
@@ -100,13 +228,32 @@ export function GoalCard({ goal }: GoalCardProps) {
                 <span className="text-xs">Caption</span>
               </button>
               <button
-                className="flex-1 p-3 border border-border text-muted-foreground flex flex-col items-center gap-1 cursor-not-allowed opacity-50"
-                disabled
+                onClick={() => fileInputRef.current?.click()}
+                className={`flex-1 p-3 border transition-colors flex flex-col items-center gap-1 ${
+                  addPhoto ? 'border-accent bg-accent/10' : 'border-border hover:border-foreground/20'
+                }`}
               >
                 <Camera size={20} />
                 <span className="text-xs">Photo</span>
               </button>
             </div>
+
+            {/* Photo preview */}
+            {photoPreview && (
+              <div className="relative">
+                <img
+                  src={photoPreview}
+                  alt="Proof preview"
+                  className="w-full h-40 object-cover border border-border"
+                />
+                <button
+                  onClick={clearPhoto}
+                  className="absolute top-2 right-2 p-1 bg-background/80 hover:bg-background border border-border"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            )}
 
             {addCaption && (
               <Textarea
@@ -118,9 +265,23 @@ export function GoalCard({ goal }: GoalCardProps) {
               />
             )}
 
-            <Button onClick={handleComplete} className="w-full" size="lg">
-              <Check size={18} className="mr-2" />
-              Post Completion
+            <Button 
+              onClick={handleComplete} 
+              className="w-full" 
+              size="lg"
+              disabled={isUploading}
+            >
+              {isUploading ? (
+                <>
+                  <Loader2 size={18} className="mr-2 animate-spin" />
+                  Uploading...
+                </>
+              ) : (
+                <>
+                  <Check size={18} className="mr-2" />
+                  Post Completion
+                </>
+              )}
             </Button>
           </div>
         </DialogContent>
