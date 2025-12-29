@@ -56,6 +56,17 @@ export function FeedPost({ post, index }: FeedPostProps) {
         </div>
       </div>
 
+      {/* Photo if exists */}
+      {post.mediaType === 'photo' && post.mediaUrl && (
+        <div className="mb-3 -mx-4">
+          <img
+            src={post.mediaUrl}
+            alt={`Proof for ${post.goalName}`}
+            className="w-full h-48 object-cover"
+          />
+        </div>
+      )}
+
       {/* Caption if exists */}
       {post.caption && (
         <p className="text-sm text-muted-foreground mb-3 leading-relaxed">
