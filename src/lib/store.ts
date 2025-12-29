@@ -1,9 +1,11 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import type { Goal, CompletedGoal, User, Category } from '@/types';
 
 interface AppState {
-  // Onboarding
+  // Hydration
+  _hasHydrated: boolean;
+  setHasHydrated: (state: boolean) => void;
   hasCompletedOnboarding: boolean;
   setOnboardingComplete: () => void;
 
@@ -90,6 +92,9 @@ const mockFeedPosts: CompletedGoal[] = [
 export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
+      _hasHydrated: false,
+      setHasHydrated: (state: boolean) => set({ _hasHydrated: state }),
+      
       hasCompletedOnboarding: false,
       setOnboardingComplete: () => set({ hasCompletedOnboarding: true }),
 
@@ -174,6 +179,9 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: 'proof-app-storage',
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
     }
   )
 );
