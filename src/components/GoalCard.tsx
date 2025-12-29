@@ -1,10 +1,9 @@
 import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Check, X, Camera, Type, Loader2, Image as ImageIcon } from 'lucide-react';
+import { Check, X, Camera, Type, Loader2 } from 'lucide-react';
 import { CategoryIcon, getCategoryLabel } from './CategoryIcon';
-import { useAppStore } from '@/lib/store';
 import { supabase } from '@/integrations/supabase/client';
-import type { Goal } from '@/types';
+import { useGoals, DbGoal, GoalWithStats } from '@/hooks/useGoals';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
@@ -14,12 +13,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import type { Category } from '@/types';
 
 interface GoalCardProps {
-  goal: Goal;
+  goal: DbGoal | GoalWithStats;
+  showStats?: boolean;
 }
 
-export function GoalCard({ goal }: GoalCardProps) {
+export function GoalCard({ goal, showStats = false }: GoalCardProps) {
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [caption, setCaption] = useState('');
   const [addCaption, setAddCaption] = useState(false);
@@ -28,14 +29,16 @@ export function GoalCard({ goal }: GoalCardProps) {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { completeGoal, removeGoal } = useAppStore();
+  const { removeGoal, completeGoal } = useGoals();
   const { toast } = useToast();
+
+  const goalWithStats = goal as GoalWithStats;
+  const hasStats = 'completionCount' in goal;
 
   const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
     if (!file.type.startsWith('image/')) {
       toast({
         title: 'Invalid file',
@@ -45,7 +48,6 @@ export function GoalCard({ goal }: GoalCardProps) {
       return;
     }
 
-    // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       toast({
         title: 'File too large',
@@ -90,7 +92,6 @@ export function GoalCard({ goal }: GoalCardProps) {
       throw error;
     }
 
-    // Get public URL
     const { data: urlData } = supabase.storage
       .from('goal-proofs')
       .getPublicUrl(data.path);
@@ -112,19 +113,13 @@ export function GoalCard({ goal }: GoalCardProps) {
         mediaType = 'text';
       }
 
-      completeGoal(
-        goal.id,
+      completeGoal({
+        goalId: goal.id,
         mediaType,
-        addCaption && caption ? caption : undefined,
-        mediaUrl
-      );
-
-      toast({
-        title: 'Goal completed!',
-        description: 'Your completion has been posted.',
+        caption: addCaption && caption ? caption : undefined,
+        mediaUrl,
       });
 
-      // Reset state
       setShowCompleteModal(false);
       setCaption('');
       setAddCaption(false);
@@ -163,8 +158,8 @@ export function GoalCard({ goal }: GoalCardProps) {
           <div className="flex-1">
             <h3 className="font-semibold text-foreground leading-snug mb-1">{goal.name}</h3>
             <div className="category-badge">
-              <CategoryIcon category={goal.category} size={12} />
-              <span>{getCategoryLabel(goal.category)}</span>
+              <CategoryIcon category={goal.category as Category} size={12} />
+              <span>{getCategoryLabel(goal.category as Category)}</span>
             </div>
           </div>
           <button
@@ -174,6 +169,17 @@ export function GoalCard({ goal }: GoalCardProps) {
             <X size={16} />
           </button>
         </div>
+
+        {showStats && hasStats && (
+          <div className="flex gap-4 text-xs text-muted-foreground mt-2 mb-3">
+            <span>{goalWithStats.completionCount} completions</span>
+            {goalWithStats.lastCompleted && (
+              <span>
+                Last: {new Date(goalWithStats.lastCompleted).toLocaleDateString()}
+              </span>
+            )}
+          </div>
+        )}
 
         <Button
           onClick={() => setShowCompleteModal(true)}
@@ -185,7 +191,6 @@ export function GoalCard({ goal }: GoalCardProps) {
         </Button>
       </motion.div>
 
-      {/* Hidden file input */}
       <input
         ref={fileInputRef}
         type="file"
@@ -195,7 +200,6 @@ export function GoalCard({ goal }: GoalCardProps) {
         className="hidden"
       />
 
-      {/* Completion Modal */}
       <Dialog open={showCompleteModal} onOpenChange={handleModalClose}>
         <DialogContent className="max-w-[340px]">
           <DialogHeader>
@@ -206,8 +210,8 @@ export function GoalCard({ goal }: GoalCardProps) {
             <div className="p-3 bg-muted">
               <p className="font-semibold">{goal.name}</p>
               <div className="category-badge mt-1">
-                <CategoryIcon category={goal.category} size={12} />
-                <span>{getCategoryLabel(goal.category)}</span>
+                <CategoryIcon category={goal.category as Category} size={12} />
+                <span>{getCategoryLabel(goal.category as Category)}</span>
               </div>
             </div>
 
@@ -238,7 +242,6 @@ export function GoalCard({ goal }: GoalCardProps) {
               </button>
             </div>
 
-            {/* Photo preview */}
             {photoPreview && (
               <div className="relative">
                 <img

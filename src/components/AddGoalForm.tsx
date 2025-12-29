@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, X } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Plus, X, Loader2 } from 'lucide-react';
 import { CategoryIcon, getCategoryLabel } from './CategoryIcon';
-import { useAppStore } from '@/lib/store';
+import { useGoals } from '@/hooks/useGoals';
 import type { Category } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,20 +13,22 @@ export function AddGoalForm() {
   const [isOpen, setIsOpen] = useState(false);
   const [goalName, setGoalName] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<Category>('personal');
-  const { addGoal, activeGoals, currentUser } = useAppStore();
-
-  const canAddMore = currentUser.isPremium || activeGoals.length < 3;
+  const { addGoal, isAdding, goals } = useGoals();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!goalName.trim()) return;
 
-    const success = addGoal(goalName.trim(), selectedCategory);
-    if (success) {
-      setGoalName('');
-      setSelectedCategory('personal');
-      setIsOpen(false);
-    }
+    addGoal(
+      { name: goalName.trim(), category: selectedCategory },
+      {
+        onSuccess: () => {
+          setGoalName('');
+          setSelectedCategory('personal');
+          setIsOpen(false);
+        },
+      }
+    );
   };
 
   if (!isOpen) {
@@ -37,9 +39,7 @@ export function AddGoalForm() {
       >
         <Plus size={18} />
         <span className="text-sm font-medium">Add Goal</span>
-        {!currentUser.isPremium && (
-          <span className="text-xs ml-1">({activeGoals.length}/3)</span>
-        )}
+        <span className="text-xs ml-1">({goals.length} active)</span>
       </button>
     );
   }
@@ -93,8 +93,15 @@ export function AddGoalForm() {
         </div>
       </div>
 
-      <Button type="submit" className="w-full" disabled={!goalName.trim()}>
-        Add Goal
+      <Button type="submit" className="w-full" disabled={!goalName.trim() || isAdding}>
+        {isAdding ? (
+          <>
+            <Loader2 size={16} className="mr-2 animate-spin" />
+            Adding...
+          </>
+        ) : (
+          'Add Goal'
+        )}
       </Button>
     </motion.form>
   );

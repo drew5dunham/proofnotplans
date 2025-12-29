@@ -1,22 +1,63 @@
 import { motion } from 'framer-motion';
-import { Flame, Target, Check, Settings } from 'lucide-react';
-import { useAppStore } from '@/lib/store';
+import { Flame, Target, Check, Settings, LogOut, Loader2 } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { useGoals, useCompletions } from '@/hooks/useGoals';
 import { Header } from '@/components/Header';
 import { BottomNav } from '@/components/BottomNav';
-import { FeedPost } from '@/components/FeedPost';
 import { Paywall } from '@/components/Paywall';
+import { CategoryIcon, getCategoryLabel } from '@/components/CategoryIcon';
+import type { Category } from '@/types';
 
 export default function Profile() {
-  const { currentUser, feedPosts } = useAppStore();
+  const { user, signOut } = useAuth();
+  const { goalsWithStats, isLoading: goalsLoading } = useGoals();
+  const { data: completions, isLoading: completionsLoading } = useCompletions();
+
+  const isLoading = goalsLoading || completionsLoading;
+  const totalCompleted = completions?.length || 0;
   
-  const userPosts = feedPosts.filter(post => post.userId === currentUser.id);
+  // Calculate streak (consecutive days with completions)
+  const calculateStreak = () => {
+    if (!completions || completions.length === 0) return 0;
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const completionDates = completions.map(c => {
+      const date = new Date(c.completed_at);
+      date.setHours(0, 0, 0, 0);
+      return date.getTime();
+    });
+    
+    const uniqueDates = [...new Set(completionDates)].sort((a, b) => b - a);
+    
+    let streak = 0;
+    let currentDate = today.getTime();
+    
+    for (const date of uniqueDates) {
+      if (date === currentDate || date === currentDate - 86400000) {
+        streak++;
+        currentDate = date;
+      } else if (date < currentDate - 86400000) {
+        break;
+      }
+    }
+    
+    return streak;
+  };
+
+  const streak = calculateStreak();
+  const userName = user?.user_metadata?.name || user?.email?.split('@')[0] || 'User';
 
   return (
     <div className="min-h-screen bg-background pb-20">
       <header className="sticky top-0 z-30 bg-background border-b border-border px-4 py-3 flex items-center justify-between">
         <h1 className="text-lg font-bold tracking-tight">Profile</h1>
-        <button className="p-2 text-muted-foreground hover:text-foreground">
-          <Settings size={20} />
+        <button 
+          onClick={signOut}
+          className="p-2 text-muted-foreground hover:text-foreground"
+        >
+          <LogOut size={20} />
         </button>
       </header>
 
@@ -25,74 +66,109 @@ export default function Profile() {
         <div className="p-4 border-b border-border">
           <div className="flex items-center gap-4 mb-4">
             <div className="w-16 h-16 bg-primary text-primary-foreground flex items-center justify-center text-2xl font-bold">
-              {currentUser.name.charAt(0)}
+              {userName.charAt(0).toUpperCase()}
             </div>
             <div>
-              <h2 className="text-xl font-bold">{currentUser.name}</h2>
-              {currentUser.isPremium && (
-                <span className="text-xs font-medium text-accent">Unlimited</span>
-              )}
+              <h2 className="text-xl font-bold">{userName}</h2>
+              <p className="text-sm text-muted-foreground">{user?.email}</p>
             </div>
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-3 gap-2">
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="stat-block"
-            >
-              <div className="flex items-center gap-1 text-accent mb-1">
-                <Flame size={16} />
-              </div>
-              <span className="text-xl font-bold">{currentUser.streak}</span>
-              <span className="text-xs text-muted-foreground">day streak</span>
-            </motion.div>
+          {isLoading ? (
+            <div className="py-6 flex justify-center">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 gap-2">
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="stat-block"
+              >
+                <div className="flex items-center gap-1 text-accent mb-1">
+                  <Flame size={16} />
+                </div>
+                <span className="text-xl font-bold">{streak}</span>
+                <span className="text-xs text-muted-foreground">day streak</span>
+              </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.15 }}
-              className="stat-block"
-            >
-              <div className="flex items-center gap-1 text-accent mb-1">
-                <Target size={16} />
-              </div>
-              <span className="text-xl font-bold">{currentUser.completionRate}%</span>
-              <span className="text-xs text-muted-foreground">completion</span>
-            </motion.div>
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15 }}
+                className="stat-block"
+              >
+                <div className="flex items-center gap-1 text-accent mb-1">
+                  <Target size={16} />
+                </div>
+                <span className="text-xl font-bold">{goalsWithStats.length}</span>
+                <span className="text-xs text-muted-foreground">active goals</span>
+              </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="stat-block"
-            >
-              <div className="flex items-center gap-1 text-accent mb-1">
-                <Check size={16} />
-              </div>
-              <span className="text-xl font-bold">{currentUser.totalCompleted}</span>
-              <span className="text-xs text-muted-foreground">completed</span>
-            </motion.div>
-          </div>
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="stat-block"
+              >
+                <div className="flex items-center gap-1 text-accent mb-1">
+                  <Check size={16} />
+                </div>
+                <span className="text-xl font-bold">{totalCompleted}</span>
+                <span className="text-xs text-muted-foreground">completed</span>
+              </motion.div>
+            </div>
+          )}
         </div>
 
-        {/* Timeline */}
+        {/* Goals with stats */}
         <div className="px-4 py-3 border-b border-border">
-          <h3 className="text-sm font-semibold">Your Timeline</h3>
+          <h3 className="text-sm font-semibold">Your Goals</h3>
         </div>
 
-        <div className="px-4">
-          {userPosts.map((post, index) => (
-            <FeedPost key={post.id} post={post} index={index} />
-          ))}
-
-          {userPosts.length === 0 && (
+        <div className="px-4 py-2">
+          {isLoading ? (
+            <div className="py-8 flex justify-center">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : goalsWithStats.length > 0 ? (
+            <div className="space-y-3">
+              {goalsWithStats.map((goal, index) => (
+                <motion.div
+                  key={goal.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                  className="p-3 bg-card border border-border"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <h4 className="font-medium text-sm">{goal.name}</h4>
+                      <div className="category-badge mt-1">
+                        <CategoryIcon category={goal.category as Category} size={12} />
+                        <span>{getCategoryLabel(goal.category as Category)}</span>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-lg font-bold text-accent">{goal.completionCount}</p>
+                      <p className="text-xs text-muted-foreground">completions</p>
+                    </div>
+                  </div>
+                  {goal.lastCompleted && (
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Last: {new Date(goal.lastCompleted).toLocaleDateString()}
+                    </p>
+                  )}
+                </motion.div>
+              ))}
+            </div>
+          ) : (
             <div className="py-12 text-center">
-              <p className="text-muted-foreground">No completions yet.</p>
+              <p className="text-muted-foreground">No goals yet.</p>
               <p className="text-sm text-muted-foreground mt-1">
-                Your posts will appear here.
+                Add goals to start tracking.
               </p>
             </div>
           )}
