@@ -229,14 +229,26 @@ export function useFeed() {
         .from('goal_completions')
         .select(`
           *,
-          goals (*),
-          profiles (name)
+          goals (*)
         `)
         .order('completed_at', { ascending: false })
         .limit(50);
       
       if (error) throw error;
-      return data as DbCompletion[];
+      
+      // Fetch profile names for all unique user_ids
+      const userIds = [...new Set(data.map((c) => c.user_id))];
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, name')
+        .in('id', userIds);
+      
+      const profileMap = new Map(profiles?.map((p) => [p.id, p.name]) || []);
+      
+      return data.map((completion) => ({
+        ...completion,
+        profiles: { name: profileMap.get(completion.user_id) || null },
+      })) as DbCompletion[];
     },
   });
 }

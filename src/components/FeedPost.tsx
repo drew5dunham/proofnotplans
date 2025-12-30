@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Heart, MessageCircle, Check } from 'lucide-react';
+import { Heart, MessageCircle, Check, ThumbsUp, Flame } from 'lucide-react';
 import { CategoryIcon, getCategoryLabel } from './CategoryIcon';
 import { formatDistanceToNow } from 'date-fns';
 import type { Category } from '@/types';
@@ -22,6 +22,8 @@ export function FeedPost({ post, index }: FeedPostProps) {
 
   const goalName = post.goals?.name || 'Goal';
   const category = (post.goals?.category || 'personal') as Category;
+  const userName = post.profiles?.name || 'Anonymous';
+  const userInitial = userName.charAt(0).toUpperCase();
 
   return (
     <motion.article
@@ -34,10 +36,10 @@ export function FeedPost({ post, index }: FeedPostProps) {
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-primary text-primary-foreground flex items-center justify-center text-sm font-semibold">
-            U
+            {userInitial}
           </div>
           <div>
-            <p className="text-sm font-semibold leading-tight">User</p>
+            <p className="text-sm font-semibold leading-tight">{userName}</p>
             <p className="timestamp">
               {formatDistanceToNow(new Date(post.completed_at), { addSuffix: true })}
             </p>
@@ -58,6 +60,32 @@ export function FeedPost({ post, index }: FeedPostProps) {
           <CategoryIcon category={category} size={12} />
           <span>{getCategoryLabel(category)}</span>
         </div>
+      </div>
+
+      {/* Reflections */}
+      <div className="space-y-3 mb-3">
+        {post.what_went_well && (
+          <div className="p-3 bg-green-500/10 border border-green-500/20">
+            <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400 text-xs font-medium mb-1">
+              <ThumbsUp size={12} />
+              <span>What went well</span>
+            </div>
+            <p className="text-sm text-foreground leading-relaxed">
+              {post.what_went_well}
+            </p>
+          </div>
+        )}
+        {post.what_was_hard && (
+          <div className="p-3 bg-orange-500/10 border border-orange-500/20">
+            <div className="flex items-center gap-1.5 text-orange-600 dark:text-orange-400 text-xs font-medium mb-1">
+              <Flame size={12} />
+              <span>What was hard</span>
+            </div>
+            <p className="text-sm text-foreground leading-relaxed">
+              {post.what_was_hard}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Photo if exists */}
