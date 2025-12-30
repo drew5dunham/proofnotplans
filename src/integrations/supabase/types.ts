@@ -22,6 +22,7 @@ export type Database = {
           id: string
           media_type: string | null
           media_url: string | null
+          status: string
           user_id: string
           what_was_hard: string | null
           what_went_well: string | null
@@ -33,6 +34,7 @@ export type Database = {
           id?: string
           media_type?: string | null
           media_url?: string | null
+          status?: string
           user_id: string
           what_was_hard?: string | null
           what_went_well?: string | null
@@ -44,6 +46,7 @@ export type Database = {
           id?: string
           media_type?: string | null
           media_url?: string | null
+          status?: string
           user_id?: string
           what_was_hard?: string | null
           what_went_well?: string | null

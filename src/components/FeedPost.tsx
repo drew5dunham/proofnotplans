@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Heart, MessageCircle, Check, ThumbsUp, Flame } from 'lucide-react';
+import { Heart, MessageCircle, Check, X, ThumbsUp, Flame } from 'lucide-react';
 import { CategoryIcon, getCategoryLabel } from './CategoryIcon';
 import { formatDistanceToNow } from 'date-fns';
 import type { Category } from '@/types';
@@ -45,9 +45,18 @@ export function FeedPost({ post, index }: FeedPostProps) {
             </p>
           </div>
         </div>
-        <div className="completion-badge">
-          <Check size={12} strokeWidth={3} />
-          <span>Done</span>
+        <div className={`completion-badge ${post.status === 'missed' ? 'bg-red-500/10 text-red-600 dark:text-red-400' : ''}`}>
+          {post.status === 'missed' ? (
+            <>
+              <X size={12} strokeWidth={3} />
+              <span>Missed</span>
+            </>
+          ) : (
+            <>
+              <Check size={12} strokeWidth={3} />
+              <span>Done</span>
+            </>
+          )}
         </div>
       </div>
 

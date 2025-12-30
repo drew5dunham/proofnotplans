@@ -21,7 +21,8 @@ interface GoalCardProps {
 }
 
 export function GoalCard({ goal, showStats = false }: GoalCardProps) {
-  const [showCompleteModal, setShowCompleteModal] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [modalMode, setModalMode] = useState<'completed' | 'missed'>('completed');
   const [caption, setCaption] = useState('');
   const [whatWentWell, setWhatWentWell] = useState('');
   const [whatWasHard, setWhatWasHard] = useState('');
@@ -101,11 +102,22 @@ export function GoalCard({ goal, showStats = false }: GoalCardProps) {
     return urlData.publicUrl;
   };
 
-  const handleComplete = async () => {
-    if (!whatWentWell.trim() || !whatWasHard.trim()) {
+  const handleSubmit = async () => {
+    // For "Done", require what went well
+    if (modalMode === 'completed' && !whatWentWell.trim()) {
       toast({
         title: 'Reflection required',
-        description: 'Please share what went well and what was hard.',
+        description: 'Please share what went well.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    // For "Not Today", require what was hard
+    if (modalMode === 'missed' && !whatWasHard.trim()) {
+      toast({
+        title: 'Reflection required',
+        description: 'Please share what was hard or why you missed it.',
         variant: 'destructive',
       });
       return;
@@ -129,18 +141,15 @@ export function GoalCard({ goal, showStats = false }: GoalCardProps) {
         mediaType,
         caption: addCaption && caption ? caption : undefined,
         mediaUrl,
-        whatWentWell: whatWentWell.trim(),
-        whatWasHard: whatWasHard.trim(),
+        whatWentWell: whatWentWell.trim() || undefined,
+        whatWasHard: whatWasHard.trim() || undefined,
+        status: modalMode,
       });
 
-      setShowCompleteModal(false);
-      setCaption('');
-      setWhatWentWell('');
-      setWhatWasHard('');
-      setAddCaption(false);
-      clearPhoto();
+      setShowModal(false);
+      resetForm();
     } catch (error) {
-      console.error('Error completing goal:', error);
+      console.error('Error posting:', error);
       toast({
         title: 'Upload failed',
         description: 'Could not upload photo. Try again.',
@@ -151,15 +160,24 @@ export function GoalCard({ goal, showStats = false }: GoalCardProps) {
     }
   };
 
+  const resetForm = () => {
+    setCaption('');
+    setWhatWentWell('');
+    setWhatWasHard('');
+    setAddCaption(false);
+    clearPhoto();
+  };
+
   const handleModalClose = (open: boolean) => {
     if (!open) {
-      clearPhoto();
-      setCaption('');
-      setWhatWentWell('');
-      setWhatWasHard('');
-      setAddCaption(false);
+      resetForm();
     }
-    setShowCompleteModal(open);
+    setShowModal(open);
+  };
+
+  const openModal = (mode: 'completed' | 'missed') => {
+    setModalMode(mode);
+    setShowModal(true);
   };
 
   return (
@@ -198,14 +216,24 @@ export function GoalCard({ goal, showStats = false }: GoalCardProps) {
           </div>
         )}
 
-        <Button
-          onClick={() => setShowCompleteModal(true)}
-          className="w-full mt-3"
-          variant="default"
-        >
-          <Check size={16} className="mr-2" />
-          Mark Complete
-        </Button>
+        <div className="flex gap-2 mt-3">
+          <Button
+            onClick={() => openModal('completed')}
+            className="flex-1"
+            variant="default"
+          >
+            <Check size={16} className="mr-1.5" />
+            Done
+          </Button>
+          <Button
+            onClick={() => openModal('missed')}
+            className="flex-1"
+            variant="outline"
+          >
+            <X size={16} className="mr-1.5" />
+            Not Today
+          </Button>
+        </div>
       </motion.div>
 
       <input
@@ -217,14 +245,16 @@ export function GoalCard({ goal, showStats = false }: GoalCardProps) {
         className="hidden"
       />
 
-      <Dialog open={showCompleteModal} onOpenChange={handleModalClose}>
+      <Dialog open={showModal} onOpenChange={handleModalClose}>
         <DialogContent className="max-w-[340px]">
           <DialogHeader>
-            <DialogTitle className="text-left">Complete Goal</DialogTitle>
+            <DialogTitle className="text-left">
+              {modalMode === 'completed' ? 'Report: Done' : 'Report: Not Today'}
+            </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4">
-            <div className="p-3 bg-muted">
+            <div className={`p-3 ${modalMode === 'completed' ? 'bg-green-500/10 border border-green-500/20' : 'bg-red-500/10 border border-red-500/20'}`}>
               <p className="font-semibold">{goal.name}</p>
               <div className="category-badge mt-1">
                 <CategoryIcon category={goal.category as Category} size={12} />
@@ -233,30 +263,61 @@ export function GoalCard({ goal, showStats = false }: GoalCardProps) {
             </div>
 
             <div className="space-y-3">
-              <div>
-                <label className="text-sm font-medium text-foreground mb-1 block">
-                  What went well? *
-                </label>
-                <Textarea
-                  placeholder="Share a win or progress..."
-                  value={whatWentWell}
-                  onChange={(e) => setWhatWentWell(e.target.value)}
-                  className="resize-none"
-                  rows={2}
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-foreground mb-1 block">
-                  What was hard? *
-                </label>
-                <Textarea
-                  placeholder="Share a challenge or obstacle..."
-                  value={whatWasHard}
-                  onChange={(e) => setWhatWasHard(e.target.value)}
-                  className="resize-none"
-                  rows={2}
-                />
-              </div>
+              {modalMode === 'completed' ? (
+                <>
+                  <div>
+                    <label className="text-sm font-medium text-foreground mb-1 block">
+                      What went well? *
+                    </label>
+                    <Textarea
+                      placeholder="Share a win or progress..."
+                      value={whatWentWell}
+                      onChange={(e) => setWhatWentWell(e.target.value)}
+                      className="resize-none"
+                      rows={2}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-foreground mb-1 block">
+                      What was hard? (optional)
+                    </label>
+                    <Textarea
+                      placeholder="Share a challenge or obstacle..."
+                      value={whatWasHard}
+                      onChange={(e) => setWhatWasHard(e.target.value)}
+                      className="resize-none"
+                      rows={2}
+                    />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <label className="text-sm font-medium text-foreground mb-1 block">
+                      What happened? *
+                    </label>
+                    <Textarea
+                      placeholder="Share why you couldn't complete it today..."
+                      value={whatWasHard}
+                      onChange={(e) => setWhatWasHard(e.target.value)}
+                      className="resize-none"
+                      rows={2}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-foreground mb-1 block">
+                      Any silver lining? (optional)
+                    </label>
+                    <Textarea
+                      placeholder="Did anything still go well?"
+                      value={whatWentWell}
+                      onChange={(e) => setWhatWentWell(e.target.value)}
+                      className="resize-none"
+                      rows={2}
+                    />
+                  </div>
+                </>
+              )}
             </div>
 
             <p className="text-sm text-muted-foreground">
@@ -304,7 +365,7 @@ export function GoalCard({ goal, showStats = false }: GoalCardProps) {
 
             {addCaption && (
               <Textarea
-                placeholder="What did you accomplish?"
+                placeholder="Add any extra thoughts..."
                 value={caption}
                 onChange={(e) => setCaption(e.target.value)}
                 className="resize-none"
@@ -313,20 +374,21 @@ export function GoalCard({ goal, showStats = false }: GoalCardProps) {
             )}
 
             <Button 
-              onClick={handleComplete} 
+              onClick={handleSubmit} 
               className="w-full" 
               size="lg"
               disabled={isUploading}
+              variant={modalMode === 'completed' ? 'default' : 'destructive'}
             >
               {isUploading ? (
                 <>
                   <Loader2 size={18} className="mr-2 animate-spin" />
-                  Uploading...
+                  Posting...
                 </>
               ) : (
                 <>
-                  <Check size={18} className="mr-2" />
-                  Post Completion
+                  {modalMode === 'completed' ? <Check size={18} className="mr-2" /> : <X size={18} className="mr-2" />}
+                  Post to Feed
                 </>
               )}
             </Button>
