@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Heart, MessageCircle, Check, X, ThumbsUp, Flame } from 'lucide-react';
 import { CategoryIcon, getCategoryLabel } from './CategoryIcon';
@@ -14,10 +15,15 @@ interface FeedPostProps {
 export function FeedPost({ post, index }: FeedPostProps) {
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
+  const navigate = useNavigate();
 
   const handleLike = () => {
     setLiked(!liked);
     setLikeCount(prev => liked ? prev - 1 : prev + 1);
+  };
+
+  const handleProfileClick = () => {
+    navigate(`/user/${post.user_id}`);
   };
 
   const goalName = post.goals?.name || 'Goal';
@@ -34,17 +40,20 @@ export function FeedPost({ post, index }: FeedPostProps) {
     >
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-2">
+        <button 
+          onClick={handleProfileClick}
+          className="flex items-center gap-2 text-left hover:opacity-80 transition-opacity"
+        >
           <div className="w-8 h-8 bg-primary text-primary-foreground flex items-center justify-center text-sm font-semibold">
             {userInitial}
           </div>
           <div>
-            <p className="text-sm font-semibold leading-tight">{userName}</p>
+            <p className="text-sm font-semibold leading-tight hover:underline">{userName}</p>
             <p className="timestamp">
               {formatDistanceToNow(new Date(post.completed_at), { addSuffix: true })}
             </p>
           </div>
-        </div>
+        </button>
         <div className={`completion-badge ${post.status === 'missed' ? 'bg-red-500/10 text-red-600 dark:text-red-400' : ''}`}>
           {post.status === 'missed' ? (
             <>
