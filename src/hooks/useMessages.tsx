@@ -1,0 +1,119 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from './useAuth';
+
+export interface Message {
+  id: string;
+  sender_id: string;
+  recipient_id: string;
+  content: string;
+  created_at: string;
+  read_at: string | null;
+}
+
+// Get messages between current user and a friend
+export function useMessages(friendId: string | null) {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  const query = useQuery({
+    queryKey: ['messages', user?.id, friendId],
+    queryFn: async (): Promise<Message[]> => {
+      if (!user || !friendId) return [];
+
+      const { data, error } = await supabase
+        .from('messages')
+        .select('*')
+        .or(`and(sender_id.eq.${user.id},recipient_id.eq.${friendId}),and(sender_id.eq.${friendId},recipient_id.eq.${user.id})`)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user && !!friendId
+  });
+
+  // Set up real-time subscription
+  useEffect(() => {
+    if (!user || !friendId) return;
+
+    const channel = supabase
+      .channel(`messages-${user.id}-${friendId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages'
+        },
+        (payload) => {
+          const newMessage = payload.new as Message;
+          // Only add if it's part of this conversation
+          if (
+            (newMessage.sender_id === user.id && newMessage.recipient_id === friendId) ||
+            (newMessage.sender_id === friendId && newMessage.recipient_id === user.id)
+          ) {
+            queryClient.setQueryData(
+              ['messages', user.id, friendId],
+              (old: Message[] | undefined) => [...(old || []), newMessage]
+            );
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, friendId, queryClient]);
+
+  return query;
+}
+
+// Send a message
+export function useSendMessage() {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { recipient_id: string; content: string }) => {
+      if (!user) throw new Error('Not authenticated');
+
+      const { error } = await supabase.from('messages').insert({
+        sender_id: user.id,
+        recipient_id: data.recipient_id,
+        content: data.content
+      });
+
+      if (error) throw error;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ 
+        queryKey: ['messages', user?.id, variables.recipient_id] 
+      });
+    }
+  });
+}
+
+// Get unread message count
+export function useUnreadMessageCount() {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ['messages', 'unread-count', user?.id],
+    queryFn: async () => {
+      if (!user) return 0;
+
+      const { count, error } = await supabase
+        .from('messages')
+        .select('*', { count: 'exact', head: true })
+        .eq('recipient_id', user.id)
+        .is('read_at', null);
+
+      if (error) throw error;
+      return count || 0;
+    },
+    enabled: !!user
+  });
+}

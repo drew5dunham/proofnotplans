@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Loader2, Send, Inbox } from 'lucide-react';
+import { Loader2, Send, Inbox, MessageCircle } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { BottomNav } from '@/components/BottomNav';
 import { Paywall } from '@/components/Paywall';
@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ChatDialog } from '@/components/ChatDialog';
 import { useAuth } from '@/hooks/useAuth';
 import { 
   useFriendsToEncourage, 
@@ -21,6 +22,12 @@ import { formatDistanceToNow } from 'date-fns';
 
 const QUICK_EMOJIS = ['🔥', '💪', '❤️', '⭐', '🚀'];
 
+interface ChatState {
+  isOpen: boolean;
+  friendId: string;
+  friendName: string;
+}
+
 export default function Encourage() {
   const { user } = useAuth();
   const { data: friends, isLoading: loadingFriends } = useFriendsToEncourage();
@@ -33,6 +40,7 @@ export default function Encourage() {
   const [selectedEmoji, setSelectedEmoji] = useState<string | null>(null);
   const [customMessage, setCustomMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [chat, setChat] = useState<ChatState>({ isOpen: false, friendId: '', friendName: '' });
 
   const toggleFriend = (friendId: string) => {
     setSelectedFriends(prev => {
@@ -119,14 +127,15 @@ export default function Encourage() {
 
   // Sample received encouragements for demo
   const sampleReceived = [
-    { id: 'sample-r1', emoji: '🔥', message: 'You got this today!', sender_name: 'Sarah M.', created_at: new Date(Date.now() - 3600000).toISOString(), read_at: null },
-    { id: 'sample-r2', emoji: '💪', message: null, sender_name: 'Jake R.', created_at: new Date(Date.now() - 7200000).toISOString(), read_at: new Date().toISOString() },
-    { id: 'sample-r3', emoji: '❤️', message: 'Crush those goals!', sender_name: 'Morgan L.', created_at: new Date(Date.now() - 86400000).toISOString(), read_at: new Date().toISOString() },
+    { id: 'sample-r1', sender_id: 'sample-s1', emoji: '🔥', message: 'You got this today!', sender_name: 'Sarah M.', created_at: new Date(Date.now() - 3600000).toISOString(), read_at: null },
+    { id: 'sample-r2', sender_id: 'sample-s2', emoji: '💪', message: null, sender_name: 'Jake R.', created_at: new Date(Date.now() - 7200000).toISOString(), read_at: new Date().toISOString() },
+    { id: 'sample-r3', sender_id: 'sample-s3', emoji: '❤️', message: 'Crush those goals!', sender_name: 'Morgan L.', created_at: new Date(Date.now() - 86400000).toISOString(), read_at: new Date().toISOString() },
   ];
 
   const allReceived = [
     ...(receivedEncouragements || []).map((enc: any) => ({
       id: enc.id,
+      sender_id: enc.sender_id,
       emoji: enc.emoji,
       message: enc.message,
       sender_name: enc.sender?.name || 'Someone',
@@ -135,6 +144,14 @@ export default function Encourage() {
     })),
     ...sampleReceived
   ];
+
+  const openChat = (senderId: string, senderName: string) => {
+    setChat({ isOpen: true, friendId: senderId, friendName: senderName });
+  };
+
+  const closeChat = () => {
+    setChat({ isOpen: false, friendId: '', friendName: '' });
+  };
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -290,8 +307,11 @@ export default function Encourage() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.05 }}
-                    onClick={() => !enc.read_at && handleMarkRead(enc.id)}
-                    className={`p-4 border cursor-pointer transition-colors ${
+                    onClick={() => {
+                      if (!enc.read_at) handleMarkRead(enc.id);
+                      openChat(enc.sender_id, enc.sender_name);
+                    }}
+                    className={`p-4 border cursor-pointer transition-colors hover:bg-accent/5 ${
                       !enc.read_at 
                         ? 'bg-accent/10 border-accent/30' 
                         : 'bg-card border-border'
@@ -317,6 +337,7 @@ export default function Encourage() {
                           {formatDistanceToNow(new Date(enc.created_at), { addSuffix: true })}
                         </p>
                       </div>
+                      <MessageCircle size={16} className="text-muted-foreground mt-1" />
                     </div>
                   </motion.div>
                 ))}
@@ -328,6 +349,15 @@ export default function Encourage() {
 
       <BottomNav />
       <Paywall />
+
+      {/* Chat Dialog */}
+      {chat.isOpen && (
+        <ChatDialog
+          friendId={chat.friendId}
+          friendName={chat.friendName}
+          onClose={closeChat}
+        />
+      )}
     </div>
   );
 }
