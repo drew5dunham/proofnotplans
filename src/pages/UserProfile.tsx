@@ -5,13 +5,17 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { BottomNav } from '@/components/BottomNav';
 import { GoalProgressSection } from '@/components/GoalProgressSection';
+import { isSampleUser, getSampleUserData } from '@/lib/sampleData';
 import type { GoalWithStats, DbCompletion } from '@/hooks/useGoals';
 
 export default function UserProfile() {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
+  
+  const isSample = userId ? isSampleUser(userId) : false;
+  const sampleData = userId ? getSampleUserData(userId) : null;
 
-  // Fetch user profile
+  // Fetch user profile (skip for sample users)
   const { data: profile, isLoading: profileLoading } = useQuery({
     queryKey: ['profile', userId],
     queryFn: async () => {
@@ -24,10 +28,10 @@ export default function UserProfile() {
       if (error) throw error;
       return data;
     },
-    enabled: !!userId,
+    enabled: !!userId && !isSample,
   });
 
-  // Fetch user's goals
+  // Fetch user's goals (skip for sample users)
   const { data: goals, isLoading: goalsLoading } = useQuery({
     queryKey: ['user-goals', userId],
     queryFn: async () => {
@@ -41,10 +45,10 @@ export default function UserProfile() {
       if (error) throw error;
       return data;
     },
-    enabled: !!userId,
+    enabled: !!userId && !isSample,
   });
 
-  // Fetch user's completions
+  // Fetch user's completions (skip for sample users)
   const { data: completions, isLoading: completionsLoading } = useQuery({
     queryKey: ['user-completions', userId],
     queryFn: async () => {
@@ -57,20 +61,25 @@ export default function UserProfile() {
       if (error) throw error;
       return data as DbCompletion[];
     },
-    enabled: !!userId,
+    enabled: !!userId && !isSample,
   });
 
-  const isLoading = profileLoading || goalsLoading || completionsLoading;
-  const totalCompleted = completions?.filter(c => c.status === 'completed').length || 0;
+  // Use sample data or real data
+  const actualProfile = isSample ? { id: userId, name: sampleData?.name } : profile;
+  const actualGoals = isSample ? sampleData?.goals : goals;
+  const actualCompletions = isSample ? sampleData?.completions : completions;
+
+  const isLoading = !isSample && (profileLoading || goalsLoading || completionsLoading);
+  const totalCompleted = actualCompletions?.filter(c => c.status === 'completed').length || 0;
 
   // Calculate streak
   const calculateStreak = () => {
-    if (!completions || completions.length === 0) return 0;
+    if (!actualCompletions || actualCompletions.length === 0) return 0;
     
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
-    const completionDates = completions
+    const completionDates = actualCompletions
       .filter(c => c.status === 'completed')
       .map(c => {
         const date = new Date(c.completed_at);
@@ -97,20 +106,22 @@ export default function UserProfile() {
 
   const streak = calculateStreak();
 
-  // Build goals with stats
-  const goalsWithStats: GoalWithStats[] = (goals || []).map(goal => {
-    const goalCompletions = (completions || []).filter(c => c.goal_id === goal.id);
-    const completedCount = goalCompletions.filter(c => c.status === 'completed').length;
-    const lastCompleted = goalCompletions.find(c => c.status === 'completed')?.completed_at;
-    
-    return {
-      ...goal,
-      completionCount: completedCount,
-      lastCompleted: lastCompleted || null,
-    };
-  });
+  // Build goals with stats (for real users only, sample users already have stats)
+  const goalsWithStats: GoalWithStats[] = isSample 
+    ? (sampleData?.goals || [])
+    : (actualGoals || []).map(goal => {
+        const goalCompletions = (actualCompletions || []).filter(c => c.goal_id === goal.id);
+        const completedCount = goalCompletions.filter(c => c.status === 'completed').length;
+        const lastCompleted = goalCompletions.find(c => c.status === 'completed')?.completed_at;
+        
+        return {
+          ...goal,
+          completionCount: completedCount,
+          lastCompleted: lastCompleted || null,
+        };
+      });
 
-  const userName = profile?.name || 'User';
+  const userName = actualProfile?.name || 'User';
 
   if (!userId) {
     return (
@@ -173,7 +184,7 @@ export default function UserProfile() {
                 <div className="flex items-center gap-1 text-accent mb-1">
                   <Target size={16} />
                 </div>
-                <span className="text-xl font-bold">{goals?.length || 0}</span>
+                <span className="text-xl font-bold">{actualGoals?.length || 0}</span>
                 <span className="text-xs text-muted-foreground">active goals</span>
               </motion.div>
 
@@ -202,7 +213,7 @@ export default function UserProfile() {
           ) : goalsWithStats.length > 0 ? (
             <GoalProgressSection 
               goals={goalsWithStats} 
-              completions={completions || []} 
+              completions={actualCompletions || []} 
             />
           ) : (
             <div className="py-12 text-center">
