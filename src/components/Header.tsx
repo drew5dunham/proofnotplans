@@ -13,8 +13,8 @@ interface HeaderProps {
 
 export function Header({ title, rightAction }: HeaderProps) {
   return (
-    <header className="sticky top-0 z-30 bg-background border-b border-border px-4 py-3">
-      <div className="flex items-center justify-between">
+    <header className="sticky top-0 z-30 bg-background border-b border-border">
+      <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Popover>
             <PopoverTrigger asChild>
