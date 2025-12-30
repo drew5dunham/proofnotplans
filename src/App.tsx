@@ -9,6 +9,7 @@ import Goals from "./pages/Goals";
 import Leaderboard from "./pages/Leaderboard";
 import Profile from "./pages/Profile";
 import UserProfile from "./pages/UserProfile";
+import Encourage from "./pages/Encourage";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
@@ -38,6 +39,7 @@ function AppRoutes() {
     <Routes>
       <Route path="/auth" element={<Auth />} />
       <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+      <Route path="/encourage" element={<ProtectedRoute><Encourage /></ProtectedRoute>} />
       <Route path="/goals" element={<ProtectedRoute><Goals /></ProtectedRoute>} />
       <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
