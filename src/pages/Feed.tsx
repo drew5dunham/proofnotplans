@@ -23,9 +23,20 @@ export default function Feed() {
 
   const hasGoals = goals && goals.length > 0;
 
+  const headerRightAction = user && hasGoals ? (
+    <ReportGoalDialog 
+      trigger={
+        <Button size="sm" variant="outline" className="h-8 text-xs">
+          <Plus size={14} className="mr-1" />
+          Report
+        </Button>
+      }
+    />
+  ) : null;
+
   return (
     <div className="min-h-screen bg-background pb-20">
-      <Header title="Feed" />
+      <Header title="Feed" rightAction={headerRightAction} />
       
       <main className="max-w-md mx-auto px-4">
         {/* Report prompt for users who haven't posted today */}
@@ -58,20 +69,6 @@ export default function Feed() {
                 )}
               </div>
             </div>
-          </div>
-        )}
-
-        {/* Floating report button for users who have already posted today */}
-        {user && hasReportedToday && hasGoals && (
-          <div className="mb-4">
-            <ReportGoalDialog 
-              trigger={
-                <Button className="w-full" variant="outline">
-                  <Plus size={16} className="mr-1.5" />
-                  Report on a Goal
-                </Button>
-              }
-            />
           </div>
         )}
 
