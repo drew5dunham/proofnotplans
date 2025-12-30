@@ -74,6 +74,9 @@ export function useFriendsToEncourage() {
   });
 }
 
+// Check if an ID is a sample ID (not a real UUID)
+const isSampleId = (id: string) => id.startsWith('sample-');
+
 // Send encouragement
 export function useSendEncouragement() {
   const { user } = useAuth();
@@ -86,6 +89,12 @@ export function useSendEncouragement() {
       message: string | null;
     }) => {
       if (!user) throw new Error('Not authenticated');
+
+      // Skip database insert for sample friends (demo mode)
+      if (isSampleId(data.recipient_id)) {
+        // Simulate success for demo purposes
+        return;
+      }
 
       const { error } = await supabase.from('encouragements').insert({
         sender_id: user.id,
