@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Heart, MessageCircle, Check, X, ThumbsUp, Flame } from 'lucide-react';
 import { CategoryIcon, getCategoryLabel } from './CategoryIcon';
+import { CommentsDrawer } from './CommentsDrawer';
+import { useCommentCount } from '@/hooks/useComments';
 import { formatDistanceToNow } from 'date-fns';
 import type { Category } from '@/types';
 import type { DbCompletion } from '@/hooks/useGoals';
@@ -15,7 +17,9 @@ interface FeedPostProps {
 export function FeedPost({ post, index }: FeedPostProps) {
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
+  const [commentsOpen, setCommentsOpen] = useState(false);
   const navigate = useNavigate();
+  const { data: commentCount } = useCommentCount(post.id);
 
   const handleLike = () => {
     setLiked(!liked);
@@ -135,10 +139,23 @@ export function FeedPost({ post, index }: FeedPostProps) {
           <Heart size={16} fill={liked ? 'currentColor' : 'none'} />
           {likeCount > 0 && <span className="font-medium">{likeCount}</span>}
         </button>
-        <button className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+        <button 
+          onClick={() => setCommentsOpen(true)}
+          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
           <MessageCircle size={16} />
+          {(commentCount || 0) > 0 && <span className="font-medium">{commentCount}</span>}
         </button>
       </div>
+
+      {/* Comments Drawer */}
+      <CommentsDrawer
+        isOpen={commentsOpen}
+        onClose={() => setCommentsOpen(false)}
+        completionId={post.id}
+        postAuthorId={post.user_id}
+        goalName={goalName}
+      />
     </motion.article>
   );
 }

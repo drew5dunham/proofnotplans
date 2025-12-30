@@ -6,6 +6,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { useReceivedEncouragements, useUnreadEncouragementCount } from '@/hooks/useEncouragements';
+import { useNotifications, useUnreadNotificationCount, useMarkNotificationRead } from '@/hooks/useComments';
 import { formatDistanceToNow } from 'date-fns';
 
 interface HeaderProps {
@@ -14,13 +15,18 @@ interface HeaderProps {
 }
 
 export function Header({ title, rightAction }: HeaderProps) {
-  const { data: encouragements, isLoading } = useReceivedEncouragements();
-  const { data: unreadCount } = useUnreadEncouragementCount();
+  const { data: encouragements, isLoading: loadingEncouragements } = useReceivedEncouragements();
+  const { data: unreadEncouragementCount } = useUnreadEncouragementCount();
+  const { data: notifications, isLoading: loadingNotifications } = useNotifications();
+  const { data: unreadNotificationCount } = useUnreadNotificationCount();
+  const markNotificationRead = useMarkNotificationRead();
 
-  // Combine encouragements with sample notifications
+  const totalUnread = (unreadEncouragementCount || 0) + (unreadNotificationCount || 0);
+  const isLoading = loadingEncouragements || loadingNotifications;
+
+  // Sample notifications for demo
   const sampleNotifications = [
     { id: 'sample-1', text: '🔥 Sarah M. is on a 7-day streak!', time: '2 hours ago' },
-    { id: 'sample-2', text: '💪 Jake just completed his workout goal', time: '5 hours ago' },
   ];
 
   return (
@@ -31,9 +37,9 @@ export function Header({ title, rightAction }: HeaderProps) {
             <PopoverTrigger asChild>
               <Button variant="ghost" size="icon" className="h-8 w-8 relative">
                 <Flame size={18} className="text-orange-500" />
-                {(unreadCount || 0) > 0 && (
+                {totalUnread > 0 && (
                   <span className="absolute -top-0.5 -right-0.5 h-4 w-4 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full flex items-center justify-center">
-                    {unreadCount}
+                    {totalUnread > 9 ? '9+' : totalUnread}
                   </span>
                 )}
               </Button>
@@ -49,6 +55,23 @@ export function Header({ title, rightAction }: HeaderProps) {
                   </div>
                 ) : (
                   <div className="p-3 space-y-3">
+                    {/* Real notifications (comments, etc.) */}
+                    {notifications && notifications.map((notif: any) => (
+                      <div 
+                        key={notif.id} 
+                        onClick={() => !notif.read_at && markNotificationRead.mutate(notif.id)}
+                        className={`text-sm p-2 -mx-2 rounded cursor-pointer ${!notif.read_at ? 'bg-accent/10' : ''}`}
+                      >
+                        <p className="font-medium">{notif.title}</p>
+                        {notif.body && (
+                          <p className="text-muted-foreground mt-0.5 truncate">"{notif.body}"</p>
+                        )}
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {formatDistanceToNow(new Date(notif.created_at), { addSuffix: true })}
+                        </p>
+                      </div>
+                    ))}
+
                     {/* Real encouragements */}
                     {encouragements && encouragements.map((enc: any) => (
                       <div 
@@ -76,7 +99,9 @@ export function Header({ title, rightAction }: HeaderProps) {
                       </div>
                     ))}
 
-                    {(!encouragements || encouragements.length === 0) && sampleNotifications.length === 0 && (
+                    {(!notifications || notifications.length === 0) && 
+                     (!encouragements || encouragements.length === 0) && 
+                     sampleNotifications.length === 0 && (
                       <p className="text-sm text-muted-foreground text-center py-2">
                         No notifications yet
                       </p>
