@@ -1,12 +1,20 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
-import { isToday, startOfDay } from 'date-fns';
+import { startOfDay } from 'date-fns';
 
 interface Friend {
   id: string;
   name: string | null;
 }
+
+// Sample friends for demo purposes
+const SAMPLE_FRIENDS: Friend[] = [
+  { id: 'sample-1', name: 'Alex Chen' },
+  { id: 'sample-2', name: 'Jordan Smith' },
+  { id: 'sample-3', name: 'Taylor Kim' },
+  { id: 'sample-4', name: 'Morgan Lee' },
+];
 
 // Get friends who haven't posted today
 export function useFriendsToEncourage() {
@@ -25,7 +33,11 @@ export function useFriendsToEncourage() {
         .eq('status', 'accepted');
 
       if (friendshipError) throw friendshipError;
-      if (!friendships || friendships.length === 0) return [];
+      
+      // If no real friendships, return sample friends for demo
+      if (!friendships || friendships.length === 0) {
+        return SAMPLE_FRIENDS;
+      }
 
       // Get friend IDs
       const friendIds = friendships.map(f => 
