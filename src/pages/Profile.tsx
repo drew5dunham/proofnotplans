@@ -1,12 +1,10 @@
 import { motion } from 'framer-motion';
-import { Flame, Target, Check, Settings, LogOut, Loader2 } from 'lucide-react';
+import { Flame, Target, Check, LogOut, Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useGoals, useCompletions } from '@/hooks/useGoals';
-import { Header } from '@/components/Header';
 import { BottomNav } from '@/components/BottomNav';
 import { Paywall } from '@/components/Paywall';
-import { CategoryIcon, getCategoryLabel } from '@/components/CategoryIcon';
-import type { Category } from '@/types';
+import { GoalProgressSection } from '@/components/GoalProgressSection';
 
 export default function Profile() {
   const { user, signOut } = useAuth();
@@ -123,47 +121,17 @@ export default function Profile() {
           )}
         </div>
 
-        {/* Goals with stats */}
-        <div className="px-4 py-3 border-b border-border">
-          <h3 className="text-sm font-semibold">Your Goals</h3>
-        </div>
-
-        <div className="px-4 py-2">
+        {/* Goal Progress Section */}
+        <div className="px-4 py-4">
           {isLoading ? (
             <div className="py-8 flex justify-center">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
           ) : goalsWithStats.length > 0 ? (
-            <div className="space-y-3">
-              {goalsWithStats.map((goal, index) => (
-                <motion.div
-                  key={goal.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  className="p-3 bg-card border border-border"
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <h4 className="font-medium text-sm">{goal.name}</h4>
-                      <div className="category-badge mt-1">
-                        <CategoryIcon category={goal.category as Category} size={12} />
-                        <span>{getCategoryLabel(goal.category as Category)}</span>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-lg font-bold text-accent">{goal.completionCount}</p>
-                      <p className="text-xs text-muted-foreground">completions</p>
-                    </div>
-                  </div>
-                  {goal.lastCompleted && (
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Last: {new Date(goal.lastCompleted).toLocaleDateString()}
-                    </p>
-                  )}
-                </motion.div>
-              ))}
-            </div>
+            <GoalProgressSection 
+              goals={goalsWithStats} 
+              completions={completions || []} 
+            />
           ) : (
             <div className="py-12 text-center">
               <p className="text-muted-foreground">No goals yet.</p>
