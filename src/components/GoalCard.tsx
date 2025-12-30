@@ -378,7 +378,7 @@ export function GoalCard({ goal, showStats = false }: GoalCardProps) {
               className="w-full" 
               size="lg"
               disabled={isUploading}
-              variant={modalMode === 'completed' ? 'default' : 'destructive'}
+              variant="default"
             >
               {isUploading ? (
                 <>
