@@ -1,49 +1,5 @@
 import type { GoalWithStats, DbCompletion } from '@/hooks/useGoals';
 
-// Sample user data for demo purposes
-export const SAMPLE_USERS: Record<string, { name: string; goals: GoalWithStats[]; completions: DbCompletion[] }> = {
-  'sample-user-1': {
-    name: 'Sarah M.',
-    goals: [
-      { id: 'sample-goal-1', user_id: 'sample-user-1', name: 'Morning run', category: 'fitness', is_active: true, created_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(), completionCount: 18, lastCompleted: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString() },
-      { id: 'sample-goal-5', user_id: 'sample-user-1', name: 'Meditate 10 min', category: 'health', is_active: true, created_at: new Date(Date.now() - 25 * 24 * 60 * 60 * 1000).toISOString(), completionCount: 22, lastCompleted: new Date(Date.now() - 27 * 60 * 60 * 1000).toISOString() },
-      { id: 'sample-goal-7', user_id: 'sample-user-1', name: 'Journal', category: 'personal', is_active: true, created_at: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(), completionCount: 15, lastCompleted: new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString() },
-    ],
-    completions: generateSampleCompletions('sample-user-1'),
-  },
-  'sample-user-2': {
-    name: 'Jake R.',
-    goals: [
-      { id: 'sample-goal-2', user_id: 'sample-user-2', name: 'Read 30 minutes', category: 'learning', is_active: true, created_at: new Date(Date.now() - 28 * 24 * 60 * 60 * 1000).toISOString(), completionCount: 24, lastCompleted: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString() },
-      { id: 'sample-goal-6', user_id: 'sample-user-2', name: 'Cold shower', category: 'health', is_active: true, created_at: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(), completionCount: 14, lastCompleted: new Date(Date.now() - 29 * 60 * 60 * 1000).toISOString() },
-    ],
-    completions: generateSampleCompletions('sample-user-2'),
-  },
-  'sample-user-3': {
-    name: 'Emma L.',
-    goals: [
-      { id: 'sample-goal-3', user_id: 'sample-user-3', name: 'Practice guitar', category: 'creative', is_active: true, created_at: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(), completionCount: 12, lastCompleted: new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString() },
-    ],
-    completions: generateSampleCompletions('sample-user-3'),
-  },
-  'sample-user-4': {
-    name: 'Marcus T.',
-    goals: [
-      { id: 'sample-goal-4', user_id: 'sample-user-4', name: 'Meal prep', category: 'health', is_active: true, created_at: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(), completionCount: 8, lastCompleted: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString() },
-    ],
-    completions: generateSampleCompletions('sample-user-4'),
-  },
-};
-
-function generateSampleCompletions(userId: string): DbCompletion[] {
-  const completions: DbCompletion[] = [];
-  const user = userId === 'sample-user-1' ? SAMPLE_USER_1_COMPLETIONS :
-               userId === 'sample-user-2' ? SAMPLE_USER_2_COMPLETIONS :
-               userId === 'sample-user-3' ? SAMPLE_USER_3_COMPLETIONS :
-               SAMPLE_USER_4_COMPLETIONS;
-  return user;
-}
-
 // Sarah M's detailed completions
 const SAMPLE_USER_1_COMPLETIONS: DbCompletion[] = [
   // Recent completions for Morning run
@@ -160,6 +116,41 @@ const SAMPLE_USER_4_COMPLETIONS: DbCompletion[] = [
     profiles: { name: 'Marcus T.' },
   })),
 ];
+
+// Sample user data for demo purposes - defined AFTER completions arrays
+export const SAMPLE_USERS: Record<string, { name: string; goals: GoalWithStats[]; completions: DbCompletion[] }> = {
+  'sample-user-1': {
+    name: 'Sarah M.',
+    goals: [
+      { id: 'sample-goal-1', user_id: 'sample-user-1', name: 'Morning run', category: 'fitness', is_active: true, created_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(), completionCount: 18, lastCompleted: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString() },
+      { id: 'sample-goal-5', user_id: 'sample-user-1', name: 'Meditate 10 min', category: 'health', is_active: true, created_at: new Date(Date.now() - 25 * 24 * 60 * 60 * 1000).toISOString(), completionCount: 22, lastCompleted: new Date(Date.now() - 27 * 60 * 60 * 1000).toISOString() },
+      { id: 'sample-goal-7', user_id: 'sample-user-1', name: 'Journal', category: 'personal', is_active: true, created_at: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(), completionCount: 15, lastCompleted: new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString() },
+    ],
+    completions: SAMPLE_USER_1_COMPLETIONS,
+  },
+  'sample-user-2': {
+    name: 'Jake R.',
+    goals: [
+      { id: 'sample-goal-2', user_id: 'sample-user-2', name: 'Read 30 minutes', category: 'learning', is_active: true, created_at: new Date(Date.now() - 28 * 24 * 60 * 60 * 1000).toISOString(), completionCount: 24, lastCompleted: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString() },
+      { id: 'sample-goal-6', user_id: 'sample-user-2', name: 'Cold shower', category: 'health', is_active: true, created_at: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(), completionCount: 14, lastCompleted: new Date(Date.now() - 29 * 60 * 60 * 1000).toISOString() },
+    ],
+    completions: SAMPLE_USER_2_COMPLETIONS,
+  },
+  'sample-user-3': {
+    name: 'Emma L.',
+    goals: [
+      { id: 'sample-goal-3', user_id: 'sample-user-3', name: 'Practice guitar', category: 'creative', is_active: true, created_at: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(), completionCount: 12, lastCompleted: new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString() },
+    ],
+    completions: SAMPLE_USER_3_COMPLETIONS,
+  },
+  'sample-user-4': {
+    name: 'Marcus T.',
+    goals: [
+      { id: 'sample-goal-4', user_id: 'sample-user-4', name: 'Meal prep', category: 'health', is_active: true, created_at: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(), completionCount: 8, lastCompleted: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString() },
+    ],
+    completions: SAMPLE_USER_4_COMPLETIONS,
+  },
+};
 
 export function isSampleUser(userId: string): boolean {
   return userId.startsWith('sample-user-');
