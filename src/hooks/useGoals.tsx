@@ -221,6 +221,88 @@ export function useCompletions() {
   });
 }
 
+// Sample posts to show social activity
+const SAMPLE_POSTS: DbCompletion[] = [
+  {
+    id: 'sample-1',
+    goal_id: 'sample-goal-1',
+    user_id: 'sample-user-1',
+    completed_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+    caption: null,
+    media_type: null,
+    media_url: null,
+    what_went_well: 'Got up early and the weather was perfect. Felt amazing after!',
+    what_was_hard: 'That first step out of bed is always the hardest. Almost hit snooze 3 times.',
+    goals: { id: 'sample-goal-1', user_id: 'sample-user-1', name: 'Morning run', category: 'fitness', is_active: true, created_at: '' },
+    profiles: { name: 'Sarah M.' },
+  },
+  {
+    id: 'sample-2',
+    goal_id: 'sample-goal-2',
+    user_id: 'sample-user-2',
+    completed_at: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
+    caption: null,
+    media_type: null,
+    media_url: null,
+    what_went_well: 'Finished a whole chapter of Atomic Habits. Taking notes helped me stay focused.',
+    what_was_hard: 'My phone kept buzzing. Had to put it in another room.',
+    goals: { id: 'sample-goal-2', user_id: 'sample-user-2', name: 'Read 30 minutes', category: 'learning', is_active: true, created_at: '' },
+    profiles: { name: 'Jake R.' },
+  },
+  {
+    id: 'sample-3',
+    goal_id: 'sample-goal-3',
+    user_id: 'sample-user-3',
+    completed_at: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
+    caption: null,
+    media_type: null,
+    media_url: null,
+    what_went_well: 'Finally nailed that chord transition I have been struggling with for weeks!',
+    what_was_hard: 'My fingers hurt after 20 minutes. Need to build more calluses.',
+    goals: { id: 'sample-goal-3', user_id: 'sample-user-3', name: 'Practice guitar', category: 'creative', is_active: true, created_at: '' },
+    profiles: { name: 'Emma L.' },
+  },
+  {
+    id: 'sample-4',
+    goal_id: 'sample-goal-4',
+    user_id: 'sample-user-4',
+    completed_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+    caption: null,
+    media_type: null,
+    media_url: null,
+    what_went_well: 'Prepped 5 healthy lunches for the week. Chicken, rice, and veggies.',
+    what_was_hard: 'Took longer than expected. Need to get more efficient with chopping.',
+    goals: { id: 'sample-goal-4', user_id: 'sample-user-4', name: 'Meal prep', category: 'health', is_active: true, created_at: '' },
+    profiles: { name: 'Marcus T.' },
+  },
+  {
+    id: 'sample-5',
+    goal_id: 'sample-goal-5',
+    user_id: 'sample-user-1',
+    completed_at: new Date(Date.now() - 27 * 60 * 60 * 1000).toISOString(),
+    caption: null,
+    media_type: null,
+    media_url: null,
+    what_went_well: 'Actually felt present for once. My mind wandered less than usual.',
+    what_was_hard: 'Kept thinking about my to-do list. Had to keep bringing focus back.',
+    goals: { id: 'sample-goal-5', user_id: 'sample-user-1', name: 'Meditate 10 min', category: 'health', is_active: true, created_at: '' },
+    profiles: { name: 'Sarah M.' },
+  },
+  {
+    id: 'sample-6',
+    goal_id: 'sample-goal-6',
+    user_id: 'sample-user-2',
+    completed_at: new Date(Date.now() - 29 * 60 * 60 * 1000).toISOString(),
+    caption: null,
+    media_type: null,
+    media_url: null,
+    what_went_well: 'Day 14 of cold showers! It is getting easier. Energy boost is real.',
+    what_was_hard: 'That first 10 seconds never gets easier. Brain screams to get out.',
+    goals: { id: 'sample-goal-6', user_id: 'sample-user-2', name: 'Cold shower', category: 'health', is_active: true, created_at: '' },
+    profiles: { name: 'Jake R.' },
+  },
+];
+
 export function useFeed() {
   return useQuery({
     queryKey: ['feed'],
@@ -245,10 +327,13 @@ export function useFeed() {
       
       const profileMap = new Map(profiles?.map((p) => [p.id, p.name]) || []);
       
-      return data.map((completion) => ({
+      const realPosts = data.map((completion) => ({
         ...completion,
         profiles: { name: profileMap.get(completion.user_id) || null },
       })) as DbCompletion[];
+
+      // Combine real posts with sample posts, real posts first
+      return [...realPosts, ...SAMPLE_POSTS];
     },
   });
 }
