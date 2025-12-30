@@ -23,6 +23,8 @@ export type Database = {
           media_type: string | null
           media_url: string | null
           user_id: string
+          what_was_hard: string | null
+          what_went_well: string | null
         }
         Insert: {
           caption?: string | null
@@ -32,6 +34,8 @@ export type Database = {
           media_type?: string | null
           media_url?: string | null
           user_id: string
+          what_was_hard?: string | null
+          what_went_well?: string | null
         }
         Update: {
           caption?: string | null
@@ -41,6 +45,8 @@ export type Database = {
           media_type?: string | null
           media_url?: string | null
           user_id?: string
+          what_was_hard?: string | null
+          what_went_well?: string | null
         }
         Relationships: [
           {

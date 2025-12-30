@@ -21,7 +21,10 @@ export interface DbCompletion {
   media_type: string | null;
   media_url: string | null;
   completed_at: string;
+  what_went_well: string | null;
+  what_was_hard: string | null;
   goals?: DbGoal;
+  profiles?: { name: string | null };
 }
 
 export interface GoalWithStats extends DbGoal {
@@ -142,11 +145,15 @@ export function useGoals() {
       caption,
       mediaType,
       mediaUrl,
+      whatWentWell,
+      whatWasHard,
     }: {
       goalId: string;
       caption?: string;
       mediaType?: 'photo' | 'text';
       mediaUrl?: string;
+      whatWentWell?: string;
+      whatWasHard?: string;
     }) => {
       if (!user) throw new Error('Not authenticated');
       
@@ -158,6 +165,8 @@ export function useGoals() {
           caption,
           media_type: mediaType,
           media_url: mediaUrl,
+          what_went_well: whatWentWell,
+          what_was_hard: whatWasHard,
         })
         .select()
         .single();
@@ -169,10 +178,10 @@ export function useGoals() {
       queryClient.invalidateQueries({ queryKey: ['goals-with-stats'] });
       queryClient.invalidateQueries({ queryKey: ['completions'] });
       queryClient.invalidateQueries({ queryKey: ['feed'] });
-      toast({ title: 'Goal completed!' });
+      toast({ title: 'Posted to feed!' });
     },
     onError: () => {
-      toast({ title: 'Failed to complete goal', variant: 'destructive' });
+      toast({ title: 'Failed to post', variant: 'destructive' });
     },
   });
 
@@ -220,7 +229,8 @@ export function useFeed() {
         .from('goal_completions')
         .select(`
           *,
-          goals (*)
+          goals (*),
+          profiles (name)
         `)
         .order('completed_at', { ascending: false })
         .limit(50);
