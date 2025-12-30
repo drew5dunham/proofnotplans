@@ -1,11 +1,12 @@
-import { Loader2, Target } from 'lucide-react';
-import { useFeed, useCompletions } from '@/hooks/useGoals';
+import { Loader2, Target, Plus } from 'lucide-react';
+import { useFeed, useCompletions, useGoals } from '@/hooks/useGoals';
 import { useAuth } from '@/hooks/useAuth';
 import { Header } from '@/components/Header';
 import { BottomNav } from '@/components/BottomNav';
 import { FeedPost } from '@/components/FeedPost';
 import { Paywall } from '@/components/Paywall';
 import { Button } from '@/components/ui/button';
+import { ReportGoalDialog } from '@/components/ReportGoalDialog';
 import { Link } from 'react-router-dom';
 import { isToday } from 'date-fns';
 
@@ -13,11 +14,14 @@ export default function Feed() {
   const { user } = useAuth();
   const { data: feedPosts, isLoading } = useFeed();
   const { data: myCompletions } = useCompletions();
+  const { goals } = useGoals();
 
   // Check if user has reported today
   const hasReportedToday = myCompletions?.some(
     (c) => isToday(new Date(c.completed_at))
   );
+
+  const hasGoals = goals && goals.length > 0;
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -38,11 +42,36 @@ export default function Feed() {
                 <p className="text-xs text-muted-foreground mt-0.5">
                   Complete a goal and share your reflection to join the feed.
                 </p>
-                <Button asChild size="sm" className="mt-3">
-                  <Link to="/goals">Go to Goals</Link>
-                </Button>
+                {hasGoals ? (
+                  <ReportGoalDialog 
+                    trigger={
+                      <Button size="sm" className="mt-3">
+                        <Plus size={16} className="mr-1.5" />
+                        Report Now
+                      </Button>
+                    }
+                  />
+                ) : (
+                  <Button asChild size="sm" className="mt-3">
+                    <Link to="/goals">Add Goals First</Link>
+                  </Button>
+                )}
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Floating report button for users who have already posted today */}
+        {user && hasReportedToday && hasGoals && (
+          <div className="mb-4">
+            <ReportGoalDialog 
+              trigger={
+                <Button className="w-full" variant="outline">
+                  <Plus size={16} className="mr-1.5" />
+                  Report on a Goal
+                </Button>
+              }
+            />
           </div>
         )}
 
