@@ -23,6 +23,8 @@ interface GoalCardProps {
 export function GoalCard({ goal, showStats = false }: GoalCardProps) {
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [caption, setCaption] = useState('');
+  const [whatWentWell, setWhatWentWell] = useState('');
+  const [whatWasHard, setWhatWasHard] = useState('');
   const [addCaption, setAddCaption] = useState(false);
   const [addPhoto, setAddPhoto] = useState(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -100,6 +102,15 @@ export function GoalCard({ goal, showStats = false }: GoalCardProps) {
   };
 
   const handleComplete = async () => {
+    if (!whatWentWell.trim() || !whatWasHard.trim()) {
+      toast({
+        title: 'Reflection required',
+        description: 'Please share what went well and what was hard.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsUploading(true);
 
     try {
@@ -118,10 +129,14 @@ export function GoalCard({ goal, showStats = false }: GoalCardProps) {
         mediaType,
         caption: addCaption && caption ? caption : undefined,
         mediaUrl,
+        whatWentWell: whatWentWell.trim(),
+        whatWasHard: whatWasHard.trim(),
       });
 
       setShowCompleteModal(false);
       setCaption('');
+      setWhatWentWell('');
+      setWhatWasHard('');
       setAddCaption(false);
       clearPhoto();
     } catch (error) {
@@ -140,6 +155,8 @@ export function GoalCard({ goal, showStats = false }: GoalCardProps) {
     if (!open) {
       clearPhoto();
       setCaption('');
+      setWhatWentWell('');
+      setWhatWasHard('');
       setAddCaption(false);
     }
     setShowCompleteModal(open);
@@ -215,8 +232,35 @@ export function GoalCard({ goal, showStats = false }: GoalCardProps) {
               </div>
             </div>
 
+            <div className="space-y-3">
+              <div>
+                <label className="text-sm font-medium text-foreground mb-1 block">
+                  What went well? *
+                </label>
+                <Textarea
+                  placeholder="Share a win or progress..."
+                  value={whatWentWell}
+                  onChange={(e) => setWhatWentWell(e.target.value)}
+                  className="resize-none"
+                  rows={2}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-foreground mb-1 block">
+                  What was hard? *
+                </label>
+                <Textarea
+                  placeholder="Share a challenge or obstacle..."
+                  value={whatWasHard}
+                  onChange={(e) => setWhatWasHard(e.target.value)}
+                  className="resize-none"
+                  rows={2}
+                />
+              </div>
+            </div>
+
             <p className="text-sm text-muted-foreground">
-              Add proof? (optional)
+              Add more? (optional)
             </p>
 
             <div className="flex gap-2">
