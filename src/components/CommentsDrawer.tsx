@@ -76,7 +76,7 @@ export function CommentsDrawer({
 
   return (
     <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DrawerContent className="max-h-[85vh]">
+      <DrawerContent className="max-h-[85vh] max-w-md mx-auto">
         <DrawerHeader className="border-b border-border pb-3">
           <div className="flex items-center justify-between">
             <DrawerTitle className="text-base">Comments</DrawerTitle>
