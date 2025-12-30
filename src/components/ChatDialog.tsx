@@ -56,7 +56,7 @@ export function ChatDialog({ friendId, friendName, onClose }: ChatDialogProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-background flex flex-col">
+    <div className="fixed inset-0 z-50 bg-background flex flex-col max-w-md mx-auto">
       {/* Header */}
       <header className="border-b border-border px-4 py-3 flex items-center gap-3">
         <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">
