@@ -212,7 +212,7 @@ export default function Encourage() {
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.05 }}
-                        className="flex items-center gap-3 p-3 bg-card border border-border"
+                        className="flex items-center gap-3 p-4 bg-card rounded-2xl"
                       >
                         <Checkbox
                           id={friend.id}
@@ -243,10 +243,10 @@ export default function Encourage() {
                       <button
                         key={emoji}
                         onClick={() => setSelectedEmoji(selectedEmoji === emoji ? null : emoji)}
-                        className={`w-12 h-12 text-2xl flex items-center justify-center border transition-all ${
+                        className={`w-12 h-12 text-2xl flex items-center justify-center rounded-xl transition-all ${
                           selectedEmoji === emoji 
-                            ? 'border-primary bg-primary/10' 
-                            : 'border-border bg-card hover:bg-accent/10'
+                            ? 'bg-primary/20 ring-2 ring-primary' 
+                            : 'bg-card hover:bg-muted'
                         }`}
                       >
                         {emoji}
@@ -264,7 +264,7 @@ export default function Encourage() {
                     placeholder="You got this! Time to crush it today..."
                     value={customMessage}
                     onChange={(e) => setCustomMessage(e.target.value)}
-                    className="resize-none"
+                    className="resize-none rounded-xl"
                     rows={3}
                   />
                 </div>
@@ -273,7 +273,7 @@ export default function Encourage() {
                 <Button
                   onClick={handleSend}
                   disabled={isSending || selectedFriends.size === 0}
-                  className="w-full"
+                  className="w-full rounded-xl"
                 >
                   {isSending ? (
                     <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -311,10 +311,10 @@ export default function Encourage() {
                       if (!enc.read_at) handleMarkRead(enc.id);
                       openChat(enc.sender_id, enc.sender_name);
                     }}
-                    className={`p-4 border cursor-pointer transition-colors hover:bg-accent/5 ${
+                    className={`p-4 rounded-2xl cursor-pointer transition-colors hover:bg-muted ${
                       !enc.read_at 
-                        ? 'bg-accent/10 border-accent/30' 
-                        : 'bg-card border-border'
+                        ? 'bg-primary/10' 
+                        : 'bg-card'
                     }`}
                   >
                     <div className="flex items-start gap-3">
