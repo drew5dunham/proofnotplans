@@ -147,6 +147,7 @@ export type Database = {
           is_active: boolean
           name: string
           user_id: string
+          visibility: string
         }
         Insert: {
           category: string
@@ -155,6 +156,7 @@ export type Database = {
           is_active?: boolean
           name: string
           user_id: string
+          visibility?: string
         }
         Update: {
           category?: string
@@ -163,6 +165,7 @@ export type Database = {
           is_active?: boolean
           name?: string
           user_id?: string
+          visibility?: string
         }
         Relationships: []
       }

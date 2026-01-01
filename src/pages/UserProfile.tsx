@@ -116,6 +116,7 @@ export default function UserProfile() {
         
         return {
           ...goal,
+          visibility: (goal.visibility || 'public') as 'public' | 'private',
           completionCount: completedCount,
           lastCompleted: lastCompleted || null,
         };
