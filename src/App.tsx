@@ -11,6 +11,7 @@ import Profile from "./pages/Profile";
 import UserProfile from "./pages/UserProfile";
 import Encourage from "./pages/Encourage";
 import Auth from "./pages/Auth";
+import GroupFeed from "./pages/GroupFeed";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
 
@@ -44,6 +45,7 @@ function AppRoutes() {
       <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
       <Route path="/user/:userId" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
+      <Route path="/group/:groupId" element={<ProtectedRoute><GroupFeed /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

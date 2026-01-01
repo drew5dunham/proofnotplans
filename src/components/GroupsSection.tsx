@@ -1,6 +1,7 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Users, ChevronRight, LogOut, Trash2, UserPlus } from 'lucide-react';
+import { Users, ChevronRight, LogOut, Trash2 } from 'lucide-react';
 import { useGroups, GroupWithMembers } from '@/hooks/useGroups';
 import { useAuth } from '@/hooks/useAuth';
 import { CategoryIcon, getCategoryLabel } from '@/components/CategoryIcon';
@@ -22,9 +23,14 @@ import type { Category } from '@/types';
 export function GroupsSection() {
   const { groups, isLoading, leaveGroup, deleteGroup } = useGroups();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
   const [confirmLeave, setConfirmLeave] = useState<GroupWithMembers | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<GroupWithMembers | null>(null);
+
+  const handleGroupClick = (groupId: string) => {
+    navigate(`/group/${groupId}`);
+  };
 
   if (isLoading) {
     return (
@@ -62,9 +68,9 @@ export function GroupsSection() {
               transition={{ delay: index * 0.05 }}
               className="border border-border bg-card"
             >
-              <button
-                onClick={() => setExpandedGroup(expandedGroup === group.id ? null : group.id)}
-                className="w-full p-3 flex items-center justify-between text-left"
+              <div
+                className="p-3 flex items-center justify-between cursor-pointer hover:bg-muted/50 transition-colors"
+                onClick={() => handleGroupClick(group.id)}
               >
                 <div>
                   <p className="font-semibold text-sm">{group.name}</p>
@@ -78,13 +84,23 @@ export function GroupsSection() {
                     </span>
                   </div>
                 </div>
-                <ChevronRight
-                  size={18}
-                  className={`text-muted-foreground transition-transform ${
-                    expandedGroup === group.id ? 'rotate-90' : ''
-                  }`}
-                />
-              </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setExpandedGroup(expandedGroup === group.id ? null : group.id);
+                    }}
+                    className="p-1 hover:bg-muted rounded transition-colors"
+                  >
+                    <ChevronRight
+                      size={18}
+                      className={`text-muted-foreground transition-transform ${
+                        expandedGroup === group.id ? 'rotate-90' : ''
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
 
               {expandedGroup === group.id && (
                 <div className="px-3 pb-3 border-t border-border pt-3 space-y-3">
