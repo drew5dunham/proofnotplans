@@ -324,6 +324,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_group: {
+        Args: { _category: string; _name: string }
+        Returns: {
+          category: string
+          created_at: string
+          created_by: string
+          id: string
+          name: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "groups"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       is_group_member: {
         Args: { _group_id: string; _user_id: string }
         Returns: boolean
