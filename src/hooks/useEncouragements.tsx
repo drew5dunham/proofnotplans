@@ -16,6 +16,48 @@ const SAMPLE_FRIENDS: Friend[] = [
   { id: 'sample-4', name: 'Morgan Lee' },
 ];
 
+// Get all accepted friends (for invite dialogs, etc.)
+export function useAllFriends() {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ['all-friends', user?.id],
+    queryFn: async (): Promise<Friend[]> => {
+      if (!user) return [];
+
+      // Get accepted friendships
+      const { data: friendships, error: friendshipError } = await supabase
+        .from('friendships')
+        .select('user_id, friend_id')
+        .or(`user_id.eq.${user.id},friend_id.eq.${user.id}`)
+        .eq('status', 'accepted');
+
+      if (friendshipError) throw friendshipError;
+
+      // If no real friendships, return sample friends for demo
+      if (!friendships || friendships.length === 0) {
+        return SAMPLE_FRIENDS;
+      }
+
+      // Get friend IDs
+      const friendIds = friendships.map((f) =>
+        f.user_id === user.id ? f.friend_id : f.user_id
+      );
+
+      // Get friend profiles
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, name')
+        .in('id', friendIds);
+
+      if (profilesError) throw profilesError;
+
+      return profiles || [];
+    },
+    enabled: !!user,
+  });
+}
+
 // Get friends who haven't posted today
 export function useFriendsToEncourage() {
   const { user } = useAuth();
