@@ -35,7 +35,7 @@ export function GroupsSection() {
   if (isLoading) {
     return (
       <div className="py-4">
-        <div className="h-20 bg-muted animate-pulse rounded-2xl" />
+        <div className="h-20 bg-muted animate-pulse" />
       </div>
     );
   }
@@ -51,7 +51,7 @@ export function GroupsSection() {
       </div>
 
       {groups.length === 0 ? (
-        <div className="py-8 text-center border-2 border-dashed border-border rounded-2xl">
+        <div className="py-8 text-center border border-dashed border-border">
           <Users size={32} className="mx-auto text-muted-foreground mb-2" />
           <p className="text-sm text-muted-foreground">No groups yet</p>
           <p className="text-xs text-muted-foreground mt-1">
@@ -66,10 +66,10 @@ export function GroupsSection() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.05 }}
-              className="bg-card rounded-2xl overflow-hidden"
+              className="border border-border bg-card"
             >
               <div
-                className="p-4 flex items-center justify-between cursor-pointer hover:bg-muted/50 transition-colors"
+                className="p-3 flex items-center justify-between cursor-pointer hover:bg-muted/50 transition-colors"
                 onClick={() => handleGroupClick(group.id)}
               >
                 <div>
@@ -90,7 +90,7 @@ export function GroupsSection() {
                       e.stopPropagation();
                       setExpandedGroup(expandedGroup === group.id ? null : group.id);
                     }}
-                    className="p-2 hover:bg-muted rounded-lg transition-colors"
+                    className="p-1 hover:bg-muted rounded transition-colors"
                   >
                     <ChevronRight
                       size={18}
@@ -103,14 +103,14 @@ export function GroupsSection() {
               </div>
 
               {expandedGroup === group.id && (
-                <div className="px-4 pb-4 border-t border-border/50 pt-3 space-y-3">
+                <div className="px-3 pb-3 border-t border-border pt-3 space-y-3">
                   <div>
                     <p className="text-xs font-medium text-muted-foreground mb-2">Members</p>
                     <div className="flex flex-wrap gap-1">
                       {group.members.map((member) => (
                         <span
                           key={member.user_id}
-                          className="px-2.5 py-1 bg-muted rounded-lg text-xs"
+                          className="px-2 py-1 bg-muted text-xs"
                         >
                           {member.name || 'Unknown'}
                           {member.user_id === group.created_by && (

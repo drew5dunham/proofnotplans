@@ -172,16 +172,16 @@ export function GoalProgressSection({ goals, completions }: GoalProgressSectionP
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold">Goal Progress</h3>
         <Tabs value={timeFrame} onValueChange={(v) => setTimeFrame(v as TimeFrame)}>
-          <TabsList className="h-8 rounded-full">
-            <TabsTrigger value="week" className="text-xs px-3 h-6 rounded-full">Week</TabsTrigger>
-            <TabsTrigger value="month" className="text-xs px-3 h-6 rounded-full">Month</TabsTrigger>
-            <TabsTrigger value="all" className="text-xs px-3 h-6 rounded-full">All</TabsTrigger>
+          <TabsList className="h-8">
+            <TabsTrigger value="week" className="text-xs px-2 h-6">Week</TabsTrigger>
+            <TabsTrigger value="month" className="text-xs px-2 h-6">Month</TabsTrigger>
+            <TabsTrigger value="all" className="text-xs px-2 h-6">All</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
 
       {/* Overall Stats */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-2">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -213,7 +213,7 @@ export function GoalProgressSection({ goals, completions }: GoalProgressSectionP
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        className="p-4 bg-card rounded-2xl"
+        className="p-3 bg-card border border-border"
       >
         <div className="flex items-center gap-2 mb-3">
           <Calendar size={14} className="text-muted-foreground" />
@@ -249,7 +249,7 @@ export function GoalProgressSection({ goals, completions }: GoalProgressSectionP
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
-          className="p-4 bg-card rounded-2xl"
+          className="p-3 bg-card border border-border"
         >
           <div className="flex items-center gap-2 mb-3">
             <TrendingUp size={14} className="text-muted-foreground" />
@@ -294,7 +294,7 @@ export function GoalProgressSection({ goals, completions }: GoalProgressSectionP
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 + index * 0.05 }}
-            className="p-4 bg-card rounded-2xl space-y-3"
+            className="p-3 bg-card border border-border space-y-3"
           >
             <div className="flex items-start justify-between">
               <div className="flex-1">
