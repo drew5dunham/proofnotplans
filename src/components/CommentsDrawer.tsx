@@ -102,7 +102,7 @@ export function CommentsDrawer({
                     animate={{ opacity: 1, y: 0 }}
                     className="flex gap-3"
                   >
-                    <div className="w-8 h-8 bg-primary text-primary-foreground flex items-center justify-center text-xs font-semibold flex-shrink-0">
+                    <div className="w-8 h-8 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center text-xs font-semibold text-white flex-shrink-0">
                       {comment.profiles?.name?.charAt(0).toUpperCase() || '?'}
                     </div>
                     <div className="flex-1 min-w-0">
