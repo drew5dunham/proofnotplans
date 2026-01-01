@@ -17,10 +17,10 @@ export function GroupFilter({ selectedGroupId, onSelectGroup }: GroupFilterProps
     <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
       <button
         onClick={() => onSelectGroup(null)}
-        className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium whitespace-nowrap border transition-colors ${
+        className={`flex items-center gap-1.5 px-4 py-2 text-xs font-medium whitespace-nowrap rounded-full transition-colors ${
           selectedGroupId === null
-            ? 'border-accent bg-accent/10 text-accent'
-            : 'border-border hover:border-foreground/20'
+            ? 'bg-primary text-primary-foreground'
+            : 'bg-card hover:bg-muted text-muted-foreground'
         }`}
       >
         <Globe size={14} />
@@ -31,10 +31,10 @@ export function GroupFilter({ selectedGroupId, onSelectGroup }: GroupFilterProps
         <button
           key={group.id}
           onClick={() => onSelectGroup(group.id)}
-          className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium whitespace-nowrap border transition-colors ${
+          className={`flex items-center gap-1.5 px-4 py-2 text-xs font-medium whitespace-nowrap rounded-full transition-colors ${
             selectedGroupId === group.id
-              ? 'border-accent bg-accent/10 text-accent'
-              : 'border-border hover:border-foreground/20'
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-card hover:bg-muted text-muted-foreground'
           }`}
         >
           <CategoryIcon category={group.category as Category} size={14} />

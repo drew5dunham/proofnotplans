@@ -189,9 +189,9 @@ export function GoalCard({ goal, showStats = false }: GoalCardProps) {
         exit={{ opacity: 0, scale: 0.95 }}
         className="goal-card"
       >
-        <div className="flex items-start justify-between mb-2">
+        <div className="flex items-start justify-between mb-3">
           <div className="flex-1">
-            <h3 className="font-semibold text-foreground leading-snug mb-1">{goal.name}</h3>
+            <h3 className="font-semibold text-foreground leading-snug mb-2">{goal.name}</h3>
             <div className="category-badge">
               <CategoryIcon category={goal.category as Category} size={12} />
               <span>{getCategoryLabel(goal.category as Category)}</span>
@@ -199,7 +199,7 @@ export function GoalCard({ goal, showStats = false }: GoalCardProps) {
           </div>
           <button
             onClick={() => removeGoal(goal.id)}
-            className="p-1 text-muted-foreground hover:text-destructive transition-colors"
+            className="p-2 text-muted-foreground hover:text-destructive transition-colors rounded-lg hover:bg-destructive/10"
           >
             <X size={16} />
           </button>
@@ -216,10 +216,10 @@ export function GoalCard({ goal, showStats = false }: GoalCardProps) {
           </div>
         )}
 
-        <div className="flex gap-2 mt-3">
+        <div className="flex gap-2 mt-4">
           <Button
             onClick={() => openModal('completed')}
-            className="flex-1"
+            className="flex-1 rounded-xl"
             variant="default"
           >
             <Check size={16} className="mr-1.5" />
@@ -227,8 +227,8 @@ export function GoalCard({ goal, showStats = false }: GoalCardProps) {
           </Button>
           <Button
             onClick={() => openModal('missed')}
-            className="flex-1"
-            variant="outline"
+            className="flex-1 rounded-xl"
+            variant="secondary"
           >
             <X size={16} className="mr-1.5" />
             Not Today
@@ -246,7 +246,7 @@ export function GoalCard({ goal, showStats = false }: GoalCardProps) {
       />
 
       <Dialog open={showModal} onOpenChange={handleModalClose}>
-        <DialogContent className="max-w-[340px]">
+        <DialogContent className="max-w-[360px] rounded-2xl">
           <DialogHeader>
             <DialogTitle className="text-left">
               {modalMode === 'completed' ? 'Report: Done' : 'Report: Not Today'}
@@ -254,9 +254,9 @@ export function GoalCard({ goal, showStats = false }: GoalCardProps) {
           </DialogHeader>
 
           <div className="space-y-4">
-            <div className={`p-3 ${modalMode === 'completed' ? 'bg-green-500/10 border border-green-500/20' : 'bg-red-500/10 border border-red-500/20'}`}>
+            <div className={`p-4 rounded-xl ${modalMode === 'completed' ? 'bg-success/10' : 'bg-destructive/10'}`}>
               <p className="font-semibold">{goal.name}</p>
-              <div className="category-badge mt-1">
+              <div className="category-badge mt-2">
                 <CategoryIcon category={goal.category as Category} size={12} />
                 <span>{getCategoryLabel(goal.category as Category)}</span>
               </div>
@@ -266,26 +266,26 @@ export function GoalCard({ goal, showStats = false }: GoalCardProps) {
               {modalMode === 'completed' ? (
                 <>
                   <div>
-                    <label className="text-sm font-medium text-foreground mb-1 block">
+                    <label className="text-sm font-medium text-foreground mb-1.5 block">
                       What went well? *
                     </label>
                     <Textarea
                       placeholder="Share a win or progress..."
                       value={whatWentWell}
                       onChange={(e) => setWhatWentWell(e.target.value)}
-                      className="resize-none"
+                      className="resize-none rounded-xl"
                       rows={2}
                     />
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-foreground mb-1 block">
+                    <label className="text-sm font-medium text-foreground mb-1.5 block">
                       What was hard? (optional)
                     </label>
                     <Textarea
                       placeholder="Share a challenge or obstacle..."
                       value={whatWasHard}
                       onChange={(e) => setWhatWasHard(e.target.value)}
-                      className="resize-none"
+                      className="resize-none rounded-xl"
                       rows={2}
                     />
                   </div>
@@ -293,26 +293,26 @@ export function GoalCard({ goal, showStats = false }: GoalCardProps) {
               ) : (
                 <>
                   <div>
-                    <label className="text-sm font-medium text-foreground mb-1 block">
+                    <label className="text-sm font-medium text-foreground mb-1.5 block">
                       What happened? *
                     </label>
                     <Textarea
                       placeholder="Share why you couldn't complete it today..."
                       value={whatWasHard}
                       onChange={(e) => setWhatWasHard(e.target.value)}
-                      className="resize-none"
+                      className="resize-none rounded-xl"
                       rows={2}
                     />
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-foreground mb-1 block">
+                    <label className="text-sm font-medium text-foreground mb-1.5 block">
                       Any silver lining? (optional)
                     </label>
                     <Textarea
                       placeholder="Did anything still go well?"
                       value={whatWentWell}
                       onChange={(e) => setWhatWentWell(e.target.value)}
-                      className="resize-none"
+                      className="resize-none rounded-xl"
                       rows={2}
                     />
                   </div>
@@ -329,8 +329,8 @@ export function GoalCard({ goal, showStats = false }: GoalCardProps) {
                 onClick={() => {
                   setAddCaption(!addCaption);
                 }}
-                className={`flex-1 p-3 border transition-colors flex flex-col items-center gap-1 ${
-                  addCaption ? 'border-accent bg-accent/10' : 'border-border hover:border-foreground/20'
+                className={`flex-1 p-3 rounded-xl transition-colors flex flex-col items-center gap-1 ${
+                  addCaption ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground hover:text-foreground'
                 }`}
               >
                 <Type size={20} />
@@ -338,8 +338,8 @@ export function GoalCard({ goal, showStats = false }: GoalCardProps) {
               </button>
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className={`flex-1 p-3 border transition-colors flex flex-col items-center gap-1 ${
-                  addPhoto ? 'border-accent bg-accent/10' : 'border-border hover:border-foreground/20'
+                className={`flex-1 p-3 rounded-xl transition-colors flex flex-col items-center gap-1 ${
+                  addPhoto ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground hover:text-foreground'
                 }`}
               >
                 <Camera size={20} />
@@ -352,11 +352,11 @@ export function GoalCard({ goal, showStats = false }: GoalCardProps) {
                 <img
                   src={photoPreview}
                   alt="Proof preview"
-                  className="w-full h-40 object-cover border border-border"
+                  className="w-full h-40 object-cover rounded-xl"
                 />
                 <button
                   onClick={clearPhoto}
-                  className="absolute top-2 right-2 p-1 bg-background/80 hover:bg-background border border-border"
+                  className="absolute top-2 right-2 p-1.5 bg-background/80 hover:bg-background rounded-lg"
                 >
                   <X size={14} />
                 </button>
@@ -368,14 +368,14 @@ export function GoalCard({ goal, showStats = false }: GoalCardProps) {
                 placeholder="Add any extra thoughts..."
                 value={caption}
                 onChange={(e) => setCaption(e.target.value)}
-                className="resize-none"
+                className="resize-none rounded-xl"
                 rows={2}
               />
             )}
 
             <Button 
               onClick={handleSubmit} 
-              className="w-full" 
+              className="w-full rounded-xl" 
               size="lg"
               disabled={isUploading}
               variant="default"

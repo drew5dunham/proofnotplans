@@ -43,12 +43,12 @@ export function FeedPost({ post, index }: FeedPostProps) {
       className="feed-post"
     >
       {/* Header */}
-      <div className="flex items-start justify-between mb-3">
+      <div className="flex items-start justify-between mb-4">
         <button 
           onClick={handleProfileClick}
-          className="flex items-center gap-2 text-left hover:opacity-80 transition-opacity"
+          className="flex items-center gap-3 text-left hover:opacity-80 transition-opacity"
         >
-          <div className="w-8 h-8 bg-primary text-primary-foreground flex items-center justify-center text-sm font-semibold">
+          <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center text-sm font-semibold text-white">
             {userInitial}
           </div>
           <div>
@@ -58,7 +58,7 @@ export function FeedPost({ post, index }: FeedPostProps) {
             </p>
           </div>
         </button>
-        <div className={`completion-badge ${post.status === 'missed' ? 'bg-red-500/10 text-red-600 dark:text-red-400' : ''}`}>
+        <div className={post.status === 'missed' ? 'completion-badge-missed' : 'completion-badge'}>
           {post.status === 'missed' ? (
             <>
               <X size={12} strokeWidth={3} />
@@ -74,8 +74,8 @@ export function FeedPost({ post, index }: FeedPostProps) {
       </div>
 
       {/* Goal completed */}
-      <div className="mb-3">
-        <h3 className="text-base font-semibold text-foreground leading-snug mb-1.5">
+      <div className="mb-4">
+        <h3 className="text-base font-semibold text-foreground leading-snug mb-2">
           {goalName}
         </h3>
         <div className="category-badge">
@@ -85,10 +85,10 @@ export function FeedPost({ post, index }: FeedPostProps) {
       </div>
 
       {/* Reflections */}
-      <div className="space-y-3 mb-3">
+      <div className="space-y-3 mb-4">
         {post.what_went_well && (
-          <div className="p-3 bg-green-500/10 border border-green-500/20">
-            <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400 text-xs font-medium mb-1">
+          <div className="p-3 bg-success/10 rounded-xl">
+            <div className="flex items-center gap-1.5 text-success text-xs font-medium mb-1">
               <ThumbsUp size={12} />
               <span>What went well</span>
             </div>
@@ -98,8 +98,8 @@ export function FeedPost({ post, index }: FeedPostProps) {
           </div>
         )}
         {post.what_was_hard && (
-          <div className="p-3 bg-orange-500/10 border border-orange-500/20">
-            <div className="flex items-center gap-1.5 text-orange-600 dark:text-orange-400 text-xs font-medium mb-1">
+          <div className="p-3 bg-orange-500/10 rounded-xl">
+            <div className="flex items-center gap-1.5 text-orange-400 text-xs font-medium mb-1">
               <Flame size={12} />
               <span>What was hard</span>
             </div>
@@ -112,7 +112,7 @@ export function FeedPost({ post, index }: FeedPostProps) {
 
       {/* Photo if exists */}
       {post.media_type === 'photo' && post.media_url && (
-        <div className="mb-3 -mx-4">
+        <div className="mb-4 -mx-4">
           <img
             src={post.media_url}
             alt={`Proof for ${goalName}`}
@@ -123,27 +123,27 @@ export function FeedPost({ post, index }: FeedPostProps) {
 
       {/* Caption if exists */}
       {post.caption && (
-        <p className="text-sm text-muted-foreground mb-3 leading-relaxed">
+        <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
           {post.caption}
         </p>
       )}
 
       {/* Actions */}
-      <div className="flex items-center gap-4 pt-2">
+      <div className="flex items-center gap-4 pt-2 border-t border-border/50">
         <button
           onClick={handleLike}
-          className={`flex items-center gap-1.5 text-sm transition-colors ${
-            liked ? 'text-accent' : 'text-muted-foreground hover:text-foreground'
+          className={`flex items-center gap-2 text-sm py-2 transition-colors ${
+            liked ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
           }`}
         >
-          <Heart size={16} fill={liked ? 'currentColor' : 'none'} />
+          <Heart size={18} fill={liked ? 'currentColor' : 'none'} />
           {likeCount > 0 && <span className="font-medium">{likeCount}</span>}
         </button>
         <button 
           onClick={() => setCommentsOpen(true)}
-          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors py-2"
         >
-          <MessageCircle size={16} />
+          <MessageCircle size={18} />
           {(commentCount || 0) > 0 && <span className="font-medium">{commentCount}</span>}
         </button>
       </div>

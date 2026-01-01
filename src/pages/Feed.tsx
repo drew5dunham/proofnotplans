@@ -94,8 +94,8 @@ export default function Feed() {
   const headerRightAction = user && hasGoals ? (
     <ReportGoalDialog 
       trigger={
-        <Button size="sm" variant="outline" className="h-8 text-xs">
-          <Plus size={14} className="mr-1" />
+        <Button size="sm" className="h-9 rounded-full px-4">
+          <Plus size={16} className="mr-1.5" />
           Report
         </Button>
       }
@@ -103,7 +103,7 @@ export default function Feed() {
   ) : null;
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-background pb-24">
       <Header title="Feed" rightAction={headerRightAction} />
       
       <main className="max-w-md mx-auto px-4">
@@ -114,9 +114,9 @@ export default function Feed() {
 
         {/* Report prompt for users who haven't posted today */}
         {user && !hasReportedToday && (
-          <div className="mb-4 p-4 bg-accent/10 border border-accent/20">
+          <div className="mb-4 p-4 bg-primary/10 rounded-2xl">
             <div className="flex items-start gap-3">
-              <div className="p-2 bg-accent/20 text-accent">
+              <div className="p-2 bg-primary/20 text-primary rounded-xl">
                 <Target size={20} />
               </div>
               <div className="flex-1">
@@ -129,14 +129,14 @@ export default function Feed() {
                 {hasGoals ? (
                   <ReportGoalDialog 
                     trigger={
-                      <Button size="sm" className="mt-3">
+                      <Button size="sm" className="mt-3 rounded-full">
                         <Plus size={16} className="mr-1.5" />
                         Report Now
                       </Button>
                     }
                   />
                 ) : (
-                  <Button asChild size="sm" className="mt-3">
+                  <Button asChild size="sm" className="mt-3 rounded-full">
                     <Link to="/goals">Add Goals First</Link>
                   </Button>
                 )}
@@ -156,7 +156,7 @@ export default function Feed() {
             ))}
 
             {(!filteredPosts || filteredPosts.length === 0) && (
-              <div className="py-12 text-center">
+              <div className="py-12 text-center bg-card rounded-2xl">
                 <p className="text-muted-foreground">
                   {selectedGroupId ? 'No posts in this group yet.' : 'No posts yet.'}
                 </p>

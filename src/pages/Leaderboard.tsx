@@ -31,32 +31,32 @@ function LeaderboardSection({ title, icon: Icon, data }: LeaderboardSectionProps
   return (
     <section className="mb-6">
       <div className="flex items-center gap-2 mb-3 px-4">
-        <Icon size={16} className="text-accent" />
+        <Icon size={16} className="text-primary" />
         <h2 className="font-semibold text-sm">{title}</h2>
       </div>
 
-      <div className="space-y-1">
+      <div className="space-y-2 px-4">
         {data.map((item, index) => (
           <motion.div
             key={item.name}
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: index * 0.05 }}
-            className={`flex items-center gap-3 px-4 py-3 ${
-              item.isYou ? 'bg-accent/10 border-l-2 border-accent' : ''
+            className={`flex items-center gap-3 p-3 rounded-xl ${
+              item.isYou ? 'bg-primary/10 border border-primary/30' : 'bg-card'
             }`}
           >
             <span className="w-6 text-sm font-medium text-muted-foreground">
               {index + 1}
             </span>
-            <div className="w-8 h-8 bg-muted flex items-center justify-center text-sm font-semibold">
+            <div className="w-10 h-10 bg-gradient-to-br from-primary/50 to-accent/50 rounded-full flex items-center justify-center text-sm font-semibold">
               {item.name.charAt(0)}
             </div>
             <div className="flex-1">
               <p className="text-sm font-medium">{item.name}</p>
               <p className="text-xs text-muted-foreground">{item.subtitle}</p>
             </div>
-            <span className="font-semibold text-sm">{item.score}</span>
+            <span className="font-semibold text-sm text-primary">{item.score}</span>
           </motion.div>
         ))}
       </div>
@@ -66,7 +66,7 @@ function LeaderboardSection({ title, icon: Icon, data }: LeaderboardSectionProps
 
 export default function Leaderboard() {
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-background pb-24">
       <Header title="This Week" />
 
       <main className="max-w-md mx-auto py-4">

@@ -1,11 +1,12 @@
 import { motion } from 'framer-motion';
-import { Flame, Target, Check, LogOut, Loader2 } from 'lucide-react';
+import { Flame, Target, Check, LogOut, Loader2, Settings } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useGoals, useCompletions } from '@/hooks/useGoals';
 import { BottomNav } from '@/components/BottomNav';
 import { Paywall } from '@/components/Paywall';
 import { GoalProgressSection } from '@/components/GoalProgressSection';
 import { GroupsSection } from '@/components/GroupsSection';
+import { Button } from '@/components/ui/button';
 
 export default function Profile() {
   const { user, signOut } = useAuth();
@@ -49,26 +50,35 @@ export default function Profile() {
   const userName = user?.user_metadata?.name || user?.email?.split('@')[0] || 'User';
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <header className="sticky top-0 z-30 bg-background border-b border-border px-4 py-3 flex items-center justify-between">
-        <h1 className="text-lg font-bold tracking-tight">Profile</h1>
-        <button 
-          onClick={signOut}
-          className="p-2 text-muted-foreground hover:text-foreground"
-        >
-          <LogOut size={20} />
-        </button>
+    <div className="min-h-screen bg-background pb-24">
+      <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-xl border-b border-border/50 px-4 py-4">
+        <div className="max-w-md mx-auto flex items-center justify-between">
+          <h1 className="text-xl font-bold tracking-tight">Profile</h1>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" className="rounded-full">
+              <Settings size={20} />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={signOut}
+              className="rounded-full text-muted-foreground hover:text-foreground"
+            >
+              <LogOut size={20} />
+            </Button>
+          </div>
+        </div>
       </header>
 
       <main className="max-w-md mx-auto">
         {/* User info */}
-        <div className="p-4 border-b border-border">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="w-16 h-16 bg-primary text-primary-foreground flex items-center justify-center text-2xl font-bold">
+        <div className="p-6">
+          <div className="flex items-center gap-4 mb-6">
+            <div className="w-20 h-20 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center text-3xl font-bold text-white">
               {userName.charAt(0).toUpperCase()}
             </div>
             <div>
-              <h2 className="text-xl font-bold">{userName}</h2>
+              <h2 className="text-2xl font-bold">{userName} 👋</h2>
               <p className="text-sm text-muted-foreground">{user?.email}</p>
             </div>
           </div>
@@ -79,17 +89,17 @@ export default function Profile() {
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
           ) : (
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-3">
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
                 className="stat-block"
               >
-                <div className="flex items-center gap-1 text-accent mb-1">
-                  <Flame size={16} />
+                <div className="flex items-center gap-1 text-orange-400 mb-1">
+                  <Flame size={18} />
                 </div>
-                <span className="text-xl font-bold">{streak}</span>
+                <span className="text-2xl font-bold">{streak}</span>
                 <span className="text-xs text-muted-foreground">day streak</span>
               </motion.div>
 
@@ -99,10 +109,10 @@ export default function Profile() {
                 transition={{ delay: 0.15 }}
                 className="stat-block"
               >
-                <div className="flex items-center gap-1 text-accent mb-1">
-                  <Target size={16} />
+                <div className="flex items-center gap-1 text-primary mb-1">
+                  <Target size={18} />
                 </div>
-                <span className="text-xl font-bold">{goalsWithStats.length}</span>
+                <span className="text-2xl font-bold">{goalsWithStats.length}</span>
                 <span className="text-xs text-muted-foreground">active goals</span>
               </motion.div>
 
@@ -112,10 +122,10 @@ export default function Profile() {
                 transition={{ delay: 0.2 }}
                 className="stat-block"
               >
-                <div className="flex items-center gap-1 text-accent mb-1">
-                  <Check size={16} />
+                <div className="flex items-center gap-1 text-success mb-1">
+                  <Check size={18} />
                 </div>
-                <span className="text-xl font-bold">{totalCompleted}</span>
+                <span className="text-2xl font-bold">{totalCompleted}</span>
                 <span className="text-xs text-muted-foreground">completed</span>
               </motion.div>
             </div>
@@ -123,7 +133,7 @@ export default function Profile() {
         </div>
 
         {/* Groups Section */}
-        <div className="px-4 py-4 border-b border-border">
+        <div className="px-4 py-4">
           <GroupsSection />
         </div>
 
@@ -139,7 +149,7 @@ export default function Profile() {
               completions={completions || []} 
             />
           ) : (
-            <div className="py-12 text-center">
+            <div className="py-12 text-center bg-card rounded-2xl">
               <p className="text-muted-foreground">No goals yet.</p>
               <p className="text-sm text-muted-foreground mt-1">
                 Add goals to start tracking.
