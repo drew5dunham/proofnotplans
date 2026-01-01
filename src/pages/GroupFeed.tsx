@@ -49,17 +49,24 @@ export default function GroupFeed() {
 
   // Fetch feed: public goals in the group's category for group members
   const { data: feed, isLoading: loadingFeed } = useQuery({
-    queryKey: ['group-feed', groupId, group?.category, members],
+    queryKey: ['group-feed', groupId, group?.category, JSON.stringify(members)],
     queryFn: async (): Promise<DbCompletion[]> => {
-      if (!group || !members || members.length === 0) return [];
+      if (!group || !members || members.length === 0) {
+        console.log('GroupFeed: missing deps', { group, members });
+        return [];
+      }
+
+      console.log('GroupFeed: fetching goals for', { category: group.category, members });
 
       // First get all public goals in this category for group members
       const { data: goals, error: goalsError } = await supabase
         .from('goals')
-        .select('id')
+        .select('id, user_id, name, category, visibility')
         .in('user_id', members)
         .eq('category', group.category)
         .eq('visibility', 'public');
+
+      console.log('GroupFeed: goals result', { goals, goalsError });
 
       if (goalsError) throw goalsError;
       if (!goals || goals.length === 0) return [];
@@ -73,6 +80,8 @@ export default function GroupFeed() {
         .in('goal_id', goalIds)
         .order('completed_at', { ascending: false })
         .limit(50);
+
+      console.log('GroupFeed: completions result', { completions, completionsError });
 
       if (completionsError) throw completionsError;
 
