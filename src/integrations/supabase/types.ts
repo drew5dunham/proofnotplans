@@ -97,6 +97,7 @@ export type Database = {
           caption: string | null
           completed_at: string
           goal_id: string
+          group_id: string | null
           id: string
           media_type: string | null
           media_url: string | null
@@ -109,6 +110,7 @@ export type Database = {
           caption?: string | null
           completed_at?: string
           goal_id: string
+          group_id?: string | null
           id?: string
           media_type?: string | null
           media_url?: string | null
@@ -121,6 +123,7 @@ export type Database = {
           caption?: string | null
           completed_at?: string
           goal_id?: string
+          group_id?: string | null
           id?: string
           media_type?: string | null
           media_url?: string | null
@@ -135,6 +138,13 @@ export type Database = {
             columns: ["goal_id"]
             isOneToOne: false
             referencedRelation: "goals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goal_completions_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
             referencedColumns: ["id"]
           },
         ]
@@ -166,6 +176,62 @@ export type Database = {
           name?: string
           user_id?: string
           visibility?: string
+        }
+        Relationships: []
+      }
+      group_members: {
+        Row: {
+          group_id: string
+          id: string
+          invited_by: string | null
+          joined_at: string
+          user_id: string
+        }
+        Insert: {
+          group_id: string
+          id?: string
+          invited_by?: string | null
+          joined_at?: string
+          user_id: string
+        }
+        Update: {
+          group_id?: string
+          id?: string
+          invited_by?: string | null
+          joined_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      groups: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string
+          id: string
+          name: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          created_by: string
+          id?: string
+          name: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          name?: string
         }
         Relationships: []
       }

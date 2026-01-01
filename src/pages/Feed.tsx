@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Loader2, Target, Plus } from 'lucide-react';
 import { useFeed, useCompletions, useGoals } from '@/hooks/useGoals';
 import { useAuth } from '@/hooks/useAuth';
@@ -7,6 +8,7 @@ import { FeedPost } from '@/components/FeedPost';
 import { Paywall } from '@/components/Paywall';
 import { Button } from '@/components/ui/button';
 import { ReportGoalDialog } from '@/components/ReportGoalDialog';
+import { GroupFilter } from '@/components/GroupFilter';
 import { Link } from 'react-router-dom';
 import { isToday } from 'date-fns';
 
@@ -15,6 +17,7 @@ export default function Feed() {
   const { data: feedPosts, isLoading } = useFeed();
   const { data: myCompletions } = useCompletions();
   const { goals } = useGoals();
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
 
   // Check if user has reported today
   const hasReportedToday = myCompletions?.some(
@@ -22,6 +25,12 @@ export default function Feed() {
   );
 
   const hasGoals = goals && goals.length > 0;
+
+  // Filter posts by group
+  const filteredPosts = feedPosts?.filter((post) => {
+    if (!selectedGroupId) return true;
+    return post.group_id === selectedGroupId;
+  });
 
   const headerRightAction = user && hasGoals ? (
     <ReportGoalDialog 
@@ -39,6 +48,11 @@ export default function Feed() {
       <Header title="Feed" rightAction={headerRightAction} />
       
       <main className="max-w-md mx-auto px-4">
+        {/* Group Filter */}
+        <div className="mb-4">
+          <GroupFilter selectedGroupId={selectedGroupId} onSelectGroup={setSelectedGroupId} />
+        </div>
+
         {/* Report prompt for users who haven't posted today */}
         {user && !hasReportedToday && (
           <div className="mb-4 p-4 bg-accent/10 border border-accent/20">
@@ -78,13 +92,15 @@ export default function Feed() {
           </div>
         ) : (
           <>
-            {feedPosts && feedPosts.map((post, index) => (
+            {filteredPosts && filteredPosts.map((post, index) => (
               <FeedPost key={post.id} post={post} index={index} />
             ))}
 
-            {(!feedPosts || feedPosts.length === 0) && (
+            {(!filteredPosts || filteredPosts.length === 0) && (
               <div className="py-12 text-center">
-                <p className="text-muted-foreground">No posts yet.</p>
+                <p className="text-muted-foreground">
+                  {selectedGroupId ? 'No posts in this group yet.' : 'No posts yet.'}
+                </p>
                 <p className="text-sm text-muted-foreground mt-1">
                   Be the first to report on a goal!
                 </p>
