@@ -5,6 +5,7 @@ import { useGoals, useCompletions } from '@/hooks/useGoals';
 import { BottomNav } from '@/components/BottomNav';
 import { Paywall } from '@/components/Paywall';
 import { GoalProgressSection } from '@/components/GoalProgressSection';
+import { GroupsSection } from '@/components/GroupsSection';
 
 export default function Profile() {
   const { user, signOut } = useAuth();
@@ -119,6 +120,11 @@ export default function Profile() {
               </motion.div>
             </div>
           )}
+        </div>
+
+        {/* Groups Section */}
+        <div className="px-4 py-4 border-b border-border">
+          <GroupsSection />
         </div>
 
         {/* Goal Progress Section */}

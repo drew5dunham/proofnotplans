@@ -1,6 +1,8 @@
 import { Dumbbell, BookOpen, Palette, Heart, Briefcase, User } from 'lucide-react';
 import type { Category } from '@/types';
 
+export const CATEGORIES: Category[] = ['fitness', 'learning', 'creative', 'health', 'work', 'personal'];
+
 interface CategoryIconProps {
   category: Category;
   size?: number;

@@ -1,8 +1,9 @@
 import { useState, useRef } from 'react';
-import { Check, X, Camera, Type, Loader2, ChevronRight } from 'lucide-react';
+import { Check, X, Camera, Type, Loader2, ChevronRight, Users } from 'lucide-react';
 import { CategoryIcon, getCategoryLabel } from './CategoryIcon';
 import { supabase } from '@/integrations/supabase/client';
 import { useGoals, DbGoal } from '@/hooks/useGoals';
+import { useGroups } from '@/hooks/useGroups';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
@@ -34,8 +35,10 @@ export function ReportGoalDialog({ trigger }: ReportGoalDialogProps) {
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { goals, completeGoal } = useGoals();
+  const { groups } = useGroups();
   const { toast } = useToast();
 
   const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -146,6 +149,7 @@ export function ReportGoalDialog({ trigger }: ReportGoalDialogProps) {
         whatWentWell: whatWentWell.trim() || undefined,
         whatWasHard: whatWasHard.trim() || undefined,
         status: modalMode,
+        groupId: selectedGroupId || undefined,
       });
 
       handleClose();
@@ -170,6 +174,7 @@ export function ReportGoalDialog({ trigger }: ReportGoalDialogProps) {
     setSelectedGoal(null);
     setStep('select-goal');
     setModalMode('completed');
+    setSelectedGroupId(null);
   };
 
   const handleClose = () => {
@@ -409,6 +414,43 @@ export function ReportGoalDialog({ trigger }: ReportGoalDialogProps) {
                   >
                     <X size={14} />
                   </button>
+                </div>
+              )}
+
+              {/* Group selector */}
+              {groups.length > 0 && (
+                <div>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Tag a group? (optional)
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedGroupId(null)}
+                      className={`px-3 py-1.5 text-xs border transition-colors ${
+                        selectedGroupId === null
+                          ? 'border-accent bg-accent/10 text-accent'
+                          : 'border-border hover:border-foreground/20'
+                      }`}
+                    >
+                      None
+                    </button>
+                    {groups.map((group) => (
+                      <button
+                        key={group.id}
+                        type="button"
+                        onClick={() => setSelectedGroupId(group.id)}
+                        className={`px-3 py-1.5 text-xs border transition-colors flex items-center gap-1 ${
+                          selectedGroupId === group.id
+                            ? 'border-accent bg-accent/10 text-accent'
+                            : 'border-border hover:border-foreground/20'
+                        }`}
+                      >
+                        <Users size={12} />
+                        {group.name}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
 
