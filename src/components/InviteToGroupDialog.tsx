@@ -4,9 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useGroups } from '@/hooks/useGroups';
+import { useAllFriends } from '@/hooks/useEncouragements';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
   DialogContent,
@@ -20,73 +19,13 @@ interface InviteToGroupDialogProps {
   groupName: string;
 }
 
-interface Friend {
-  id: string;
-  name: string | null;
-}
-
-const PAGE_SIZE = 20;
-
 export function InviteToGroupDialog({ groupId, groupName }: InviteToGroupDialogProps) {
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [friends, setFriends] = useState<Friend[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [invitedIds, setInvitedIds] = useState<Set<string>>(new Set());
   const [existingMemberIds, setExistingMemberIds] = useState<Set<string>>(new Set());
-  const [page, setPage] = useState(0);
-  const [hasMore, setHasMore] = useState(true);
   const { inviteToGroup } = useGroups();
-  const { user } = useAuth();
-  const { toast } = useToast();
-
-  // Fetch accepted friends
-  const fetchFriends = async (pageNum: number, append = false) => {
-    if (!user) return;
-    setIsLoading(true);
-    try {
-      // Get accepted friendships where user is either user_id or friend_id
-      const { data: friendships, error } = await supabase
-        .from('friendships')
-        .select('user_id, friend_id')
-        .eq('status', 'accepted')
-        .or(`user_id.eq.${user.id},friend_id.eq.${user.id}`)
-        .range(pageNum * PAGE_SIZE, (pageNum + 1) * PAGE_SIZE - 1);
-
-      if (error) throw error;
-
-      // Extract friend IDs (the other person in each friendship)
-      const friendIds = (friendships || []).map((f) =>
-        f.user_id === user.id ? f.friend_id : f.user_id
-      );
-
-      if (friendIds.length === 0) {
-        if (!append) setFriends([]);
-        setHasMore(false);
-        return;
-      }
-
-      // Fetch profiles for friends
-      const { data: profiles, error: profileError } = await supabase
-        .from('profiles')
-        .select('id, name')
-        .in('id', friendIds);
-
-      if (profileError) throw profileError;
-
-      const newFriends = (profiles || []).map((p) => ({
-        id: p.id,
-        name: p.name,
-      }));
-
-      setFriends((prev) => (append ? [...prev, ...newFriends] : newFriends));
-      setHasMore(friendships?.length === PAGE_SIZE);
-    } catch (err) {
-      toast({ title: 'Failed to load friends', variant: 'destructive' });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const { data: friends, isLoading } = useAllFriends();
 
   // Fetch existing group members
   const fetchExistingMembers = async () => {
@@ -100,11 +39,7 @@ export function InviteToGroupDialog({ groupId, groupName }: InviteToGroupDialogP
 
   useEffect(() => {
     if (open) {
-      setPage(0);
-      setHasMore(true);
-      setFriends([]);
       setInvitedIds(new Set());
-      fetchFriends(0, false);
       fetchExistingMembers();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -112,16 +47,11 @@ export function InviteToGroupDialog({ groupId, groupName }: InviteToGroupDialogP
 
   // Filter friends by search query
   const filteredFriends = useMemo(() => {
+    if (!friends) return [];
     if (!searchQuery.trim()) return friends;
     const q = searchQuery.toLowerCase();
     return friends.filter((f) => f.name?.toLowerCase().includes(q));
   }, [friends, searchQuery]);
-
-  const handleLoadMore = () => {
-    const nextPage = page + 1;
-    setPage(nextPage);
-    fetchFriends(nextPage, true);
-  };
 
   const handleInvite = (userId: string) => {
     inviteToGroup(
@@ -137,9 +67,7 @@ export function InviteToGroupDialog({ groupId, groupName }: InviteToGroupDialogP
   const handleClose = () => {
     setOpen(false);
     setSearchQuery('');
-    setFriends([]);
     setInvitedIds(new Set());
-    setPage(0);
   };
 
   return (
@@ -169,13 +97,13 @@ export function InviteToGroupDialog({ groupId, groupName }: InviteToGroupDialogP
 
           {/* Friends list */}
           <ScrollArea className="h-[280px] border border-border rounded-md">
-            {isLoading && friends.length === 0 ? (
+            {isLoading ? (
               <div className="flex items-center justify-center h-full">
                 <Loader2 className="animate-spin text-muted-foreground" size={24} />
               </div>
             ) : filteredFriends.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-8">
-                {friends.length === 0 ? 'No friends yet' : 'No matches'}
+                {(friends?.length ?? 0) === 0 ? 'No friends yet' : 'No matches'}
               </p>
             ) : (
               <div className="p-2 space-y-1">
@@ -189,7 +117,12 @@ export function InviteToGroupDialog({ groupId, groupName }: InviteToGroupDialogP
                       key={friend.id}
                       className="flex items-center justify-between p-2 rounded-md hover:bg-muted/50 transition-colors"
                     >
-                      <span className="text-sm truncate">{friend.name || 'Unknown'}</span>
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 bg-primary text-primary-foreground flex items-center justify-center text-xs font-semibold rounded-full">
+                          {friend.name?.charAt(0).toUpperCase() || '?'}
+                        </div>
+                        <span className="text-sm truncate">{friend.name || 'Unknown'}</span>
+                      </div>
                       <Button
                         size="sm"
                         variant={disabled ? 'ghost' : 'default'}
@@ -201,18 +134,6 @@ export function InviteToGroupDialog({ groupId, groupName }: InviteToGroupDialogP
                     </div>
                   );
                 })}
-
-                {hasMore && !searchQuery && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-full mt-2"
-                    onClick={handleLoadMore}
-                    disabled={isLoading}
-                  >
-                    {isLoading ? <Loader2 size={14} className="animate-spin" /> : 'Load more'}
-                  </Button>
-                )}
               </div>
             )}
           </ScrollArea>
