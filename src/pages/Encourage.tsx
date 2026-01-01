@@ -219,7 +219,7 @@ export default function Encourage() {
                           checked={selectedFriends.has(friend.id)}
                           onCheckedChange={() => toggleFriend(friend.id)}
                         />
-                        <div className="w-8 h-8 bg-primary text-primary-foreground flex items-center justify-center text-sm font-semibold">
+                        <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center text-sm font-semibold text-white">
                           {friend.name?.charAt(0).toUpperCase() || '?'}
                         </div>
                         <label 
