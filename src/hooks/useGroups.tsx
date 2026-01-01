@@ -99,30 +99,12 @@ export function useGroups() {
     mutationFn: async ({ name, category }: { name: string; category: Category }) => {
       if (!user) throw new Error('Not authenticated');
 
-      // Create the group
-      const { data: group, error: groupError } = await supabase
-        .from('groups')
-        .insert({
-          name,
-          category,
-          created_by: user.id,
-        })
-        .select()
-        .single();
+      const { data: group, error } = await supabase.rpc('create_group', {
+        _name: name,
+        _category: category,
+      });
 
-      if (groupError) throw groupError;
-
-      // Add creator as first member
-      const { error: memberError } = await supabase
-        .from('group_members')
-        .insert({
-          group_id: group.id,
-          user_id: user.id,
-          invited_by: null,
-        });
-
-      if (memberError) throw memberError;
-
+      if (error) throw error;
       return group;
     },
     onSuccess: () => {
