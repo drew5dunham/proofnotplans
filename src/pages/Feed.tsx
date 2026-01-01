@@ -1,7 +1,10 @@
 import { useState } from 'react';
 import { Loader2, Target, Plus } from 'lucide-react';
-import { useFeed, useCompletions, useGoals } from '@/hooks/useGoals';
+import { useQuery } from '@tanstack/react-query';
+import { useFeed, useCompletions, useGoals, DbCompletion } from '@/hooks/useGoals';
 import { useAuth } from '@/hooks/useAuth';
+import { useGroups } from '@/hooks/useGroups';
+import { supabase } from '@/integrations/supabase/client';
 import { Header } from '@/components/Header';
 import { BottomNav } from '@/components/BottomNav';
 import { FeedPost } from '@/components/FeedPost';
@@ -14,10 +17,68 @@ import { isToday } from 'date-fns';
 
 export default function Feed() {
   const { user } = useAuth();
-  const { data: feedPosts, isLoading } = useFeed();
+  const { data: feedPosts, isLoading: loadingFeed } = useFeed();
   const { data: myCompletions } = useCompletions();
   const { goals } = useGoals();
+  const { groups } = useGroups();
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+
+  // Get selected group details
+  const selectedGroup = selectedGroupId 
+    ? groups.find(g => g.id === selectedGroupId) 
+    : null;
+
+  // Fetch group-specific feed when a group is selected
+  const { data: groupFeed, isLoading: loadingGroupFeed } = useQuery({
+    queryKey: ['group-feed', selectedGroupId, selectedGroup?.category, selectedGroup?.members?.map(m => m.user_id)],
+    queryFn: async (): Promise<DbCompletion[]> => {
+      if (!selectedGroup) return [];
+      
+      const memberIds = selectedGroup.members.map(m => m.user_id);
+      if (memberIds.length === 0) return [];
+
+      // Get public goals in this category for group members
+      const { data: goalsData, error: goalsError } = await supabase
+        .from('goals')
+        .select('id, user_id, name, category, visibility, is_active, created_at')
+        .in('user_id', memberIds)
+        .eq('category', selectedGroup.category)
+        .eq('visibility', 'public');
+
+      if (goalsError) throw goalsError;
+      if (!goalsData || goalsData.length === 0) return [];
+
+      const goalIds = goalsData.map(g => g.id);
+
+      // Get completions for those goals
+      const { data: completions, error: completionsError } = await supabase
+        .from('goal_completions')
+        .select('*')
+        .in('goal_id', goalIds)
+        .order('completed_at', { ascending: false })
+        .limit(50);
+
+      if (completionsError) throw completionsError;
+
+      // Map goals and fetch profiles
+      const userIds = [...new Set(completions?.map(c => c.user_id) || [])];
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, name')
+        .in('id', userIds);
+
+      const profileMap = new Map(profiles?.map(p => [p.id, p.name]) || []);
+      const goalMap = new Map(goalsData.map(g => [g.id, g]));
+
+      return (completions || []).map(c => ({
+        ...c,
+        status: c.status as 'completed' | 'missed',
+        goals: goalMap.get(c.goal_id),
+        profiles: { name: profileMap.get(c.user_id) || null },
+      })) as DbCompletion[];
+    },
+    enabled: !!selectedGroupId && !!selectedGroup,
+  });
 
   // Check if user has reported today
   const hasReportedToday = myCompletions?.some(
@@ -26,11 +87,9 @@ export default function Feed() {
 
   const hasGoals = goals && goals.length > 0;
 
-  // Filter posts by group
-  const filteredPosts = feedPosts?.filter((post) => {
-    if (!selectedGroupId) return true;
-    return post.group_id === selectedGroupId;
-  });
+  // Use group feed when a group is selected, otherwise use main feed
+  const filteredPosts = selectedGroupId ? groupFeed : feedPosts;
+  const isLoading = selectedGroupId ? loadingGroupFeed : loadingFeed;
 
   const headerRightAction = user && hasGoals ? (
     <ReportGoalDialog 
