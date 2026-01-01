@@ -6,45 +6,45 @@
 
 @layer base {
   :root {
-    /* Cream/off-white background - warm, not sterile */
-    --background: 40 20% 98%;
-    --foreground: 0 0% 8%;
+    /* Dark navy/slate background */
+    --background: 225 25% 12%;
+    --foreground: 210 20% 98%;
 
-    /* Cards slightly warmer */
-    --card: 40 15% 96%;
-    --card-foreground: 0 0% 8%;
+    /* Cards - slightly lighter than background */
+    --card: 225 22% 16%;
+    --card-foreground: 210 20% 98%;
 
-    --popover: 40 20% 98%;
-    --popover-foreground: 0 0% 8%;
+    --popover: 225 22% 16%;
+    --popover-foreground: 210 20% 98%;
 
-    /* Near-black primary */
-    --primary: 0 0% 8%;
-    --primary-foreground: 40 20% 98%;
+    /* Primary - bright blue accent */
+    --primary: 217 91% 60%;
+    --primary-foreground: 210 20% 98%;
 
-    /* Muted sage for secondary actions */
-    --secondary: 150 8% 90%;
-    --secondary-foreground: 0 0% 8%;
+    /* Secondary - muted dark */
+    --secondary: 225 20% 22%;
+    --secondary-foreground: 210 20% 85%;
 
     /* Muted tones */
-    --muted: 40 10% 92%;
-    --muted-foreground: 0 0% 45%;
+    --muted: 225 18% 20%;
+    --muted-foreground: 215 15% 55%;
 
-    /* Sage green accent - the "completed" color */
-    --accent: 152 25% 45%;
-    --accent-foreground: 40 20% 98%;
+    /* Accent - cyan/teal */
+    --accent: 190 80% 50%;
+    --accent-foreground: 210 20% 98%;
 
-    /* Success state - deeper sage */
-    --success: 152 30% 40%;
-    --success-foreground: 40 20% 98%;
+    /* Success state - green */
+    --success: 152 55% 50%;
+    --success-foreground: 210 20% 98%;
 
-    --destructive: 0 65% 50%;
-    --destructive-foreground: 40 20% 98%;
+    --destructive: 0 70% 55%;
+    --destructive-foreground: 210 20% 98%;
 
-    --border: 40 10% 88%;
-    --input: 40 10% 88%;
-    --ring: 152 25% 45%;
+    --border: 225 15% 25%;
+    --input: 225 15% 22%;
+    --ring: 217 91% 60%;
 
-    --radius: 0.25rem;
+    --radius: 0.75rem;
   }
 }
 
@@ -67,15 +67,15 @@
 
 @layer components {
   .feed-post {
-    @apply border-b border-border py-4;
+    @apply bg-card rounded-2xl p-4 mb-4;
   }
 
   .stat-block {
-    @apply flex flex-col items-center justify-center p-3 bg-muted;
+    @apply flex flex-col items-center justify-center p-4 bg-card rounded-xl;
   }
 
   .category-badge {
-    @apply inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-muted text-muted-foreground;
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium bg-primary/20 text-primary rounded-full;
   }
 
   .timestamp {
@@ -83,11 +83,15 @@
   }
 
   .goal-card {
-    @apply p-4 bg-card border border-border;
+    @apply p-4 bg-card rounded-2xl;
   }
 
   .completion-badge {
-    @apply inline-flex items-center gap-1.5 px-2.5 py-1 bg-accent text-accent-foreground text-xs font-semibold;
+    @apply inline-flex items-center gap-1.5 px-3 py-1.5 bg-success/20 text-success text-xs font-semibold rounded-full;
+  }
+  
+  .completion-badge-missed {
+    @apply inline-flex items-center gap-1.5 px-3 py-1.5 bg-destructive/20 text-destructive text-xs font-semibold rounded-full;
   }
 }
 
@@ -109,5 +113,14 @@
       opacity: 1;
       transform: translateY(0);
     }
+  }
+  
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
   }
 }

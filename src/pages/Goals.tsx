@@ -11,10 +11,10 @@ export default function Goals() {
   const { goalsWithStats, isLoading } = useGoals();
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-background pb-24">
       <Header title="My Goals" />
 
-      <main className="max-w-md mx-auto px-4 py-4 space-y-3">
+      <main className="max-w-md mx-auto px-4 py-4 space-y-4">
         {isLoading ? (
           <div className="py-12 flex justify-center">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -30,7 +30,7 @@ export default function Goals() {
             <AddGoalForm />
 
             {goalsWithStats.length === 0 && (
-              <div className="py-8 text-center">
+              <div className="py-8 text-center bg-card rounded-2xl">
                 <p className="text-muted-foreground text-sm">
                   No active goals. Add one to get started.
                 </p>

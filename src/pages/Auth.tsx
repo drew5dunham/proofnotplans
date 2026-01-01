@@ -115,8 +115,11 @@ export default function Auth() {
         className="w-full max-w-sm"
       >
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold tracking-tight">proof.</h1>
-          <p className="text-muted-foreground text-sm mt-1">
+          <div className="w-16 h-16 bg-gradient-to-br from-primary to-accent rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <span className="text-2xl font-bold text-white">p</span>
+          </div>
+          <h1 className="text-3xl font-bold tracking-tight">proof.</h1>
+          <p className="text-muted-foreground text-sm mt-2">
             {isSignUp ? 'Create your account' : 'Welcome back'}
           </p>
         </div>
@@ -129,7 +132,7 @@ export default function Auth() {
                 placeholder="Your name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className={errors.name ? 'border-destructive' : ''}
+                className={`h-12 rounded-xl bg-card border-border ${errors.name ? 'border-destructive' : ''}`}
               />
               {errors.name && (
                 <p className="text-destructive text-xs mt-1">{errors.name}</p>
@@ -143,7 +146,7 @@ export default function Auth() {
               placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className={errors.email ? 'border-destructive' : ''}
+              className={`h-12 rounded-xl bg-card border-border ${errors.email ? 'border-destructive' : ''}`}
             />
             {errors.email && (
               <p className="text-destructive text-xs mt-1">{errors.email}</p>
@@ -156,16 +159,16 @@ export default function Auth() {
               placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className={errors.password ? 'border-destructive' : ''}
+              className={`h-12 rounded-xl bg-card border-border ${errors.password ? 'border-destructive' : ''}`}
             />
             {errors.password && (
               <p className="text-destructive text-xs mt-1">{errors.password}</p>
             )}
           </div>
 
-          <Button type="submit" className="w-full" disabled={isLoading}>
+          <Button type="submit" className="w-full h-12 rounded-xl text-base" disabled={isLoading}>
             {isLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Loader2 className="h-5 w-5 animate-spin" />
             ) : isSignUp ? (
               'Create Account'
             ) : (

@@ -39,7 +39,7 @@ export function AddGoalForm() {
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="w-full p-4 border border-dashed border-border hover:border-foreground/30 transition-colors flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground"
+        className="w-full p-4 border-2 border-dashed border-border hover:border-primary/50 transition-colors rounded-2xl flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground"
       >
         <Plus size={18} />
         <span className="text-sm font-medium">Add Goal</span>
@@ -54,14 +54,14 @@ export function AddGoalForm() {
       animate={{ opacity: 1, height: 'auto' }}
       exit={{ opacity: 0, height: 0 }}
       onSubmit={handleSubmit}
-      className="border border-border p-4 space-y-4"
+      className="bg-card rounded-2xl p-4 space-y-4"
     >
       <div className="flex items-center justify-between">
         <h3 className="font-semibold">New Goal</h3>
         <button
           type="button"
           onClick={() => setIsOpen(false)}
-          className="p-1 text-muted-foreground hover:text-foreground"
+          className="p-2 text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted"
         >
           <X size={18} />
         </button>
@@ -72,7 +72,7 @@ export function AddGoalForm() {
         placeholder="What will you complete?"
         value={goalName}
         onChange={(e) => setGoalName(e.target.value)}
-        className="w-full"
+        className="w-full h-12 rounded-xl"
         autoFocus
       />
 
@@ -84,10 +84,10 @@ export function AddGoalForm() {
               key={cat}
               type="button"
               onClick={() => setSelectedCategory(cat)}
-              className={`p-2 border text-xs font-medium flex items-center justify-center gap-1.5 transition-colors ${
+              className={`p-2 rounded-xl text-xs font-medium flex items-center justify-center gap-1.5 transition-colors ${
                 selectedCategory === cat
-                  ? 'border-accent bg-accent/10 text-foreground'
-                  : 'border-border text-muted-foreground hover:border-foreground/20'
+                  ? 'bg-primary/20 text-primary'
+                  : 'bg-muted text-muted-foreground hover:text-foreground'
               }`}
             >
               <CategoryIcon category={cat} size={12} />
@@ -103,10 +103,10 @@ export function AddGoalForm() {
           <button
             type="button"
             onClick={() => setVisibility('public')}
-            className={`p-3 border text-xs font-medium flex flex-col items-center gap-1.5 transition-colors ${
+            className={`p-3 rounded-xl text-xs font-medium flex flex-col items-center gap-1.5 transition-colors ${
               visibility === 'public'
-                ? 'border-accent bg-accent/10 text-foreground'
-                : 'border-border text-muted-foreground hover:border-foreground/20'
+                ? 'bg-primary/20 text-primary'
+                : 'bg-muted text-muted-foreground hover:text-foreground'
             }`}
           >
             <Globe size={16} />
@@ -116,10 +116,10 @@ export function AddGoalForm() {
           <button
             type="button"
             onClick={() => setVisibility('private')}
-            className={`p-3 border text-xs font-medium flex flex-col items-center gap-1.5 transition-colors ${
+            className={`p-3 rounded-xl text-xs font-medium flex flex-col items-center gap-1.5 transition-colors ${
               visibility === 'private'
-                ? 'border-accent bg-accent/10 text-foreground'
-                : 'border-border text-muted-foreground hover:border-foreground/20'
+                ? 'bg-primary/20 text-primary'
+                : 'bg-muted text-muted-foreground hover:text-foreground'
             }`}
           >
             <Lock size={16} />
@@ -129,7 +129,7 @@ export function AddGoalForm() {
         </div>
       </div>
 
-      <Button type="submit" className="w-full" disabled={!goalName.trim() || isAdding}>
+      <Button type="submit" className="w-full rounded-xl" disabled={!goalName.trim() || isAdding}>
         {isAdding ? (
           <>
             <Loader2 size={16} className="mr-2 animate-spin" />
