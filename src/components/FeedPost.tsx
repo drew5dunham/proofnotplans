@@ -5,8 +5,6 @@ import { Heart, MessageCircle, Check, X, ThumbsUp, Flame, Trash2 } from 'lucide-
 import { CategoryIcon, getCategoryLabel } from './CategoryIcon';
 import { CommentsDrawer } from './CommentsDrawer';
 import { useCommentCount } from '@/hooks/useComments';
-import { useAuth } from '@/hooks/useAuth';
-import { useGoals } from '@/hooks/useGoals';
 import { formatDistanceToNow } from 'date-fns';
 import type { Category } from '@/types';
 import type { DbCompletion } from '@/hooks/useGoals';
@@ -26,19 +24,20 @@ interface FeedPostProps {
   post: DbCompletion;
   index: number;
   autoOpenComments?: boolean;
+  currentUserId?: string;
+  onDelete?: (completionId: string) => void;
+  isDeleting?: boolean;
 }
 
-export function FeedPost({ post, index, autoOpenComments = false }: FeedPostProps) {
+export function FeedPost({ post, index, autoOpenComments = false, currentUserId, onDelete, isDeleting = false }: FeedPostProps) {
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
   const [commentsOpen, setCommentsOpen] = useState(false);
   const postRef = useRef<HTMLElement>(null);
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { deleteCompletion, isDeleting } = useGoals();
   const { data: commentCount } = useCommentCount(post.id);
 
-  const isOwnPost = user?.id === post.user_id;
+  const isOwnPost = currentUserId === post.user_id;
 
   // Auto-open comments and scroll to post if highlighted
   useEffect(() => {
@@ -64,7 +63,7 @@ export function FeedPost({ post, index, autoOpenComments = false }: FeedPostProp
   };
 
   const handleDelete = () => {
-    deleteCompletion(post.id);
+    onDelete?.(post.id);
   };
 
   const goalName = post.goals?.name || 'Goal';
