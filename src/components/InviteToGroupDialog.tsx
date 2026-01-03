@@ -55,7 +55,7 @@ export function InviteToGroupDialog({ groupId, groupName }: InviteToGroupDialogP
 
   const handleInvite = (userId: string) => {
     inviteToGroup(
-      { groupId, userId },
+      { groupId, userId, groupName },
       {
         onSuccess: () => {
           setInvitedIds((prev) => new Set([...prev, userId]));

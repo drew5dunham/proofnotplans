@@ -31,10 +31,14 @@ export function Header({ title, rightAction }: HeaderProps) {
       markNotificationRead.mutate(notif.id);
     }
     
-    // Navigate to the post if it's a comment or like notification with a reference_id
-    if ((notif.type === 'comment' || notif.type === 'like') && notif.reference_id) {
+    // Navigate based on notification type
+    if (notif.reference_id) {
       setPopoverOpen(false);
-      navigate(`/?post=${notif.reference_id}`);
+      if (notif.type === 'group_invite') {
+        navigate(`/group/${notif.reference_id}`);
+      } else if (notif.type === 'comment' || notif.type === 'like') {
+        navigate(`/?post=${notif.reference_id}`);
+      }
     }
   };
 
@@ -72,9 +76,10 @@ export function Header({ title, rightAction }: HeaderProps) {
                   </div>
                 ) : (
                   <div className="p-3 space-y-2">
-                    {/* Real notifications (comments, etc.) */}
+                    {/* Real notifications (comments, group invites, etc.) */}
                     {notifications && notifications.map((notif: any) => {
-                      const isClickable = (notif.type === 'comment' || notif.type === 'like') && notif.reference_id;
+                      const isClickable = notif.reference_id && 
+                        (notif.type === 'comment' || notif.type === 'like' || notif.type === 'group_invite');
                       return (
                         <div 
                           key={notif.id} 
