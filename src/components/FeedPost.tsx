@@ -116,19 +116,19 @@ export function FeedPost({ post, index, autoOpenComments = false, currentUserId,
                   <Trash2 size={16} />
                 </button>
               </AlertDialogTrigger>
-              <AlertDialogContent>
+              <AlertDialogContent className="max-w-[calc(100%-2rem)] mx-4 rounded-2xl">
                 <AlertDialogHeader>
                   <AlertDialogTitle>Delete this post?</AlertDialogTitle>
                   <AlertDialogDescription>
                     This action cannot be undone. This will permanently delete your post and remove it from the feed.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogFooter className="flex-row gap-2">
+                  <AlertDialogCancel className="flex-1 mt-0">Cancel</AlertDialogCancel>
                   <AlertDialogAction
                     onClick={handleDelete}
                     disabled={isDeleting}
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    className="flex-1 bg-destructive text-destructive-foreground hover:bg-destructive/90"
                   >
                     {isDeleting ? 'Deleting...' : 'Delete'}
                   </AlertDialogAction>
