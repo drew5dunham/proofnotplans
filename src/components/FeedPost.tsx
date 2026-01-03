@@ -1,13 +1,26 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Heart, MessageCircle, Check, X, ThumbsUp, Flame } from 'lucide-react';
+import { Heart, MessageCircle, Check, X, ThumbsUp, Flame, Trash2 } from 'lucide-react';
 import { CategoryIcon, getCategoryLabel } from './CategoryIcon';
 import { CommentsDrawer } from './CommentsDrawer';
 import { useCommentCount } from '@/hooks/useComments';
+import { useAuth } from '@/hooks/useAuth';
+import { useGoals } from '@/hooks/useGoals';
 import { formatDistanceToNow } from 'date-fns';
 import type { Category } from '@/types';
 import type { DbCompletion } from '@/hooks/useGoals';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 interface FeedPostProps {
   post: DbCompletion;
@@ -21,7 +34,11 @@ export function FeedPost({ post, index, autoOpenComments = false }: FeedPostProp
   const [commentsOpen, setCommentsOpen] = useState(false);
   const postRef = useRef<HTMLElement>(null);
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { deleteCompletion, isDeleting } = useGoals();
   const { data: commentCount } = useCommentCount(post.id);
+
+  const isOwnPost = user?.id === post.user_id;
 
   // Auto-open comments and scroll to post if highlighted
   useEffect(() => {
@@ -44,6 +61,10 @@ export function FeedPost({ post, index, autoOpenComments = false }: FeedPostProp
 
   const handleProfileClick = () => {
     navigate(`/user/${post.user_id}`);
+  };
+
+  const handleDelete = () => {
+    deleteCompletion(post.id);
   };
 
   const goalName = post.goals?.name || 'Goal';
@@ -75,17 +96,46 @@ export function FeedPost({ post, index, autoOpenComments = false }: FeedPostProp
             </p>
           </div>
         </button>
-        <div className={post.status === 'missed' ? 'completion-badge-missed' : 'completion-badge'}>
-          {post.status === 'missed' ? (
-            <>
-              <X size={12} strokeWidth={3} />
-              <span>Missed</span>
-            </>
-          ) : (
-            <>
-              <Check size={12} strokeWidth={3} />
-              <span>Done</span>
-            </>
+        <div className="flex items-center gap-2">
+          <div className={post.status === 'missed' ? 'completion-badge-missed' : 'completion-badge'}>
+            {post.status === 'missed' ? (
+              <>
+                <X size={12} strokeWidth={3} />
+                <span>Missed</span>
+              </>
+            ) : (
+              <>
+                <Check size={12} strokeWidth={3} />
+                <span>Done</span>
+              </>
+            )}
+          </div>
+          {isOwnPost && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <button className="p-1.5 text-muted-foreground hover:text-destructive transition-colors rounded-md hover:bg-destructive/10">
+                  <Trash2 size={16} />
+                </button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete this post?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete your post and remove it from the feed.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleDelete}
+                    disabled={isDeleting}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    {isDeleting ? 'Deleting...' : 'Delete'}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           )}
         </div>
       </div>

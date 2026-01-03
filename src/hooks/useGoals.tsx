@@ -196,6 +196,29 @@ export function useGoals() {
     },
   });
 
+  const deleteCompletionMutation = useMutation({
+    mutationFn: async (completionId: string) => {
+      if (!user) throw new Error('Not authenticated');
+      
+      const { error } = await supabase
+        .from('goal_completions')
+        .delete()
+        .eq('id', completionId)
+        .eq('user_id', user.id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['goals-with-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['completions'] });
+      queryClient.invalidateQueries({ queryKey: ['feed'] });
+      toast({ title: 'Post deleted' });
+    },
+    onError: () => {
+      toast({ title: 'Failed to delete post', variant: 'destructive' });
+    },
+  });
+
   return {
     goals: goalsQuery.data || [],
     goalsWithStats: goalsWithStatsQuery.data || [],
@@ -203,8 +226,10 @@ export function useGoals() {
     addGoal: addGoalMutation.mutate,
     removeGoal: removeGoalMutation.mutate,
     completeGoal: completeGoalMutation.mutate,
+    deleteCompletion: deleteCompletionMutation.mutate,
     isAdding: addGoalMutation.isPending,
     isCompleting: completeGoalMutation.isPending,
+    isDeleting: deleteCompletionMutation.isPending,
   };
 }
 
