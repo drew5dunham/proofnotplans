@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Loader2, Target, Plus } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useFeed, useCompletions, useGoals, DbCompletion } from '@/hooks/useGoals';
@@ -17,11 +18,24 @@ import { isToday } from 'date-fns';
 
 export default function Feed() {
   const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const highlightPostId = searchParams.get('post');
   const { data: feedPosts, isLoading: loadingFeed } = useFeed();
   const { data: myCompletions } = useCompletions();
   const { goals } = useGoals();
   const { groups } = useGroups();
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+
+  // Clear the post param after initial load to clean up URL
+  useEffect(() => {
+    if (highlightPostId && !loadingFeed) {
+      // Wait a bit for scroll/highlight, then clear URL param
+      const timeout = setTimeout(() => {
+        setSearchParams({}, { replace: true });
+      }, 2000);
+      return () => clearTimeout(timeout);
+    }
+  }, [highlightPostId, loadingFeed, setSearchParams]);
 
   // Get selected group details
   const selectedGroup = selectedGroupId 
@@ -152,7 +166,12 @@ export default function Feed() {
         ) : (
           <>
             {filteredPosts && filteredPosts.map((post, index) => (
-              <FeedPost key={post.id} post={post} index={index} />
+              <FeedPost 
+                key={post.id} 
+                post={post} 
+                index={index} 
+                autoOpenComments={post.id === highlightPostId}
+              />
             ))}
 
             {(!filteredPosts || filteredPosts.length === 0) && (

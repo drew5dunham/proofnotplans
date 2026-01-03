@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Heart, MessageCircle, Check, X, ThumbsUp, Flame } from 'lucide-react';
@@ -12,14 +12,30 @@ import type { DbCompletion } from '@/hooks/useGoals';
 interface FeedPostProps {
   post: DbCompletion;
   index: number;
+  autoOpenComments?: boolean;
 }
 
-export function FeedPost({ post, index }: FeedPostProps) {
+export function FeedPost({ post, index, autoOpenComments = false }: FeedPostProps) {
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
   const [commentsOpen, setCommentsOpen] = useState(false);
+  const postRef = useRef<HTMLElement>(null);
   const navigate = useNavigate();
   const { data: commentCount } = useCommentCount(post.id);
+
+  // Auto-open comments and scroll to post if highlighted
+  useEffect(() => {
+    if (autoOpenComments) {
+      // Scroll to this post
+      setTimeout(() => {
+        postRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+      // Open comments drawer
+      setTimeout(() => {
+        setCommentsOpen(true);
+      }, 500);
+    }
+  }, [autoOpenComments]);
 
   const handleLike = () => {
     setLiked(!liked);
@@ -37,10 +53,11 @@ export function FeedPost({ post, index }: FeedPostProps) {
 
   return (
     <motion.article
+      ref={postRef}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05, duration: 0.3 }}
-      className="feed-post"
+      className={`feed-post ${autoOpenComments ? 'ring-2 ring-primary/50' : ''}`}
     >
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
