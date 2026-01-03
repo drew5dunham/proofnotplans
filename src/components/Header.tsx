@@ -1,4 +1,5 @@
 import { Flame, Loader2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import {
   Popover,
@@ -8,6 +9,7 @@ import {
 import { useReceivedEncouragements, useUnreadEncouragementCount } from '@/hooks/useEncouragements';
 import { useNotifications, useUnreadNotificationCount, useMarkNotificationRead } from '@/hooks/useComments';
 import { formatDistanceToNow } from 'date-fns';
+import { useState } from 'react';
 
 interface HeaderProps {
   title: string;
@@ -15,11 +17,26 @@ interface HeaderProps {
 }
 
 export function Header({ title, rightAction }: HeaderProps) {
+  const navigate = useNavigate();
+  const [popoverOpen, setPopoverOpen] = useState(false);
   const { data: encouragements, isLoading: loadingEncouragements } = useReceivedEncouragements();
   const { data: unreadEncouragementCount } = useUnreadEncouragementCount();
   const { data: notifications, isLoading: loadingNotifications } = useNotifications();
   const { data: unreadNotificationCount } = useUnreadNotificationCount();
   const markNotificationRead = useMarkNotificationRead();
+
+  const handleNotificationClick = (notif: any) => {
+    // Mark as read
+    if (!notif.read_at) {
+      markNotificationRead.mutate(notif.id);
+    }
+    
+    // Navigate to the post if it's a comment or like notification with a reference_id
+    if ((notif.type === 'comment' || notif.type === 'like') && notif.reference_id) {
+      setPopoverOpen(false);
+      navigate(`/?post=${notif.reference_id}`);
+    }
+  };
 
   const totalUnread = (unreadEncouragementCount || 0) + (unreadNotificationCount || 0);
   const isLoading = loadingEncouragements || loadingNotifications;
@@ -33,7 +50,7 @@ export function Header({ title, rightAction }: HeaderProps) {
     <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-xl border-b border-border/50">
       <div className="max-w-md mx-auto px-4 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Popover>
+          <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
             <PopoverTrigger asChild>
               <Button variant="ghost" size="icon" className="h-10 w-10 relative rounded-full bg-card hover:bg-muted">
                 <Flame size={20} className="text-orange-400" />
@@ -56,21 +73,26 @@ export function Header({ title, rightAction }: HeaderProps) {
                 ) : (
                   <div className="p-3 space-y-2">
                     {/* Real notifications (comments, etc.) */}
-                    {notifications && notifications.map((notif: any) => (
-                      <div 
-                        key={notif.id} 
-                        onClick={() => !notif.read_at && markNotificationRead.mutate(notif.id)}
-                        className={`p-3 rounded-xl cursor-pointer transition-colors ${!notif.read_at ? 'bg-primary/10' : 'hover:bg-muted'}`}
-                      >
-                        <p className="font-medium text-sm">{notif.title}</p>
-                        {notif.body && (
-                          <p className="text-muted-foreground text-sm mt-0.5 truncate">"{notif.body}"</p>
-                        )}
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {formatDistanceToNow(new Date(notif.created_at), { addSuffix: true })}
-                        </p>
-                      </div>
-                    ))}
+                    {notifications && notifications.map((notif: any) => {
+                      const isClickable = (notif.type === 'comment' || notif.type === 'like') && notif.reference_id;
+                      return (
+                        <div 
+                          key={notif.id} 
+                          onClick={() => handleNotificationClick(notif)}
+                          className={`p-3 rounded-xl transition-colors ${
+                            isClickable ? 'cursor-pointer hover:bg-muted' : ''
+                          } ${!notif.read_at ? 'bg-primary/10' : ''}`}
+                        >
+                          <p className="font-medium text-sm">{notif.title}</p>
+                          {notif.body && (
+                            <p className="text-muted-foreground text-sm mt-0.5 truncate">"{notif.body}"</p>
+                          )}
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {formatDistanceToNow(new Date(notif.created_at), { addSuffix: true })}
+                          </p>
+                        </div>
+                      );
+                    })}
 
                     {/* Real encouragements */}
                     {encouragements && encouragements.map((enc: any) => (
