@@ -6,6 +6,7 @@ import { BottomNav } from '@/components/BottomNav';
 import { Paywall } from '@/components/Paywall';
 import { GoalProgressSection } from '@/components/GoalProgressSection';
 import { GroupsSection } from '@/components/GroupsSection';
+import { FriendsListDialog } from '@/components/FriendsListDialog';
 import { Button } from '@/components/ui/button';
 
 export default function Profile() {
@@ -89,7 +90,7 @@ export default function Profile() {
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
           ) : (
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-4 gap-3">
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -100,7 +101,7 @@ export default function Profile() {
                   <Flame size={18} />
                 </div>
                 <span className="text-2xl font-bold">{streak}</span>
-                <span className="text-xs text-muted-foreground">day streak</span>
+                <span className="text-xs text-muted-foreground">streak</span>
               </motion.div>
 
               <motion.div
@@ -113,7 +114,7 @@ export default function Profile() {
                   <Target size={18} />
                 </div>
                 <span className="text-2xl font-bold">{goalsWithStats.length}</span>
-                <span className="text-xs text-muted-foreground">active goals</span>
+                <span className="text-xs text-muted-foreground">goals</span>
               </motion.div>
 
               <motion.div
@@ -126,7 +127,15 @@ export default function Profile() {
                   <Check size={18} />
                 </div>
                 <span className="text-2xl font-bold">{totalCompleted}</span>
-                <span className="text-xs text-muted-foreground">completed</span>
+                <span className="text-xs text-muted-foreground">done</span>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.25 }}
+              >
+                <FriendsListDialog userName={userName} />
               </motion.div>
             </div>
           )}
