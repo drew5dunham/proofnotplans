@@ -45,12 +45,14 @@ export function InviteToGroupDialog({ groupId, groupName }: InviteToGroupDialogP
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  // Filter friends by search query
+  // Filter out sample friends (demo data) and apply search query
   const filteredFriends = useMemo(() => {
     if (!friends) return [];
-    if (!searchQuery.trim()) return friends;
+    // Filter out sample IDs - they can't be invited to real groups
+    const realFriends = friends.filter((f) => !f.id.startsWith('sample-'));
+    if (!searchQuery.trim()) return realFriends;
     const q = searchQuery.toLowerCase();
-    return friends.filter((f) => f.name?.toLowerCase().includes(q));
+    return realFriends.filter((f) => f.name?.toLowerCase().includes(q));
   }, [friends, searchQuery]);
 
   const handleInvite = (userId: string) => {
