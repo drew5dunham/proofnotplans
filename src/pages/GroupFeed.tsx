@@ -9,6 +9,7 @@ import { BottomNav } from '@/components/BottomNav';
 import { FeedPost } from '@/components/FeedPost';
 import { CategoryIcon, getCategoryLabel } from '@/components/CategoryIcon';
 import { Button } from '@/components/ui/button';
+import { InviteToGroupDialog } from '@/components/InviteToGroupDialog';
 import type { Category } from '@/types';
 import type { DbCompletion } from '@/hooks/useGoals';
 
@@ -189,18 +190,24 @@ export default function GroupFeed() {
             <ArrowLeft size={20} />
           </Button>
           {group && (
-            <div className="flex-1">
-              <h1 className="text-lg font-bold">{group.name}</h1>
-              <div className="flex items-center gap-2 mt-0.5">
-                <div className="category-badge">
-                  <CategoryIcon category={group.category as Category} size={12} />
-                  <span>{getCategoryLabel(group.category as Category)}</span>
+            <>
+              <div className="flex-1">
+                <h1 className="text-lg font-bold">{group.name}</h1>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <div className="category-badge">
+                    <CategoryIcon category={group.category as Category} size={12} />
+                    <span>{getCategoryLabel(group.category as Category)}</span>
+                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    {members?.length || 0} member{(members?.length || 0) !== 1 ? 's' : ''}
+                  </span>
                 </div>
-                <span className="text-xs text-muted-foreground">
-                  {members?.length || 0} member{(members?.length || 0) !== 1 ? 's' : ''}
-                </span>
               </div>
-            </div>
+              {/* Invite button - only show for accepted members */}
+              {!pendingInvitation && (
+                <InviteToGroupDialog groupId={group.id} groupName={group.name} />
+              )}
+            </>
           )}
         </div>
 
