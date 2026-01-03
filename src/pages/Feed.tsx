@@ -22,7 +22,7 @@ export default function Feed() {
   const highlightPostId = searchParams.get('post');
   const { data: feedPosts, isLoading: loadingFeed } = useFeed();
   const { data: myCompletions } = useCompletions();
-  const { goals } = useGoals();
+  const { goals, deleteCompletion, isDeleting } = useGoals();
   const { groups } = useGroups();
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
 
@@ -171,6 +171,9 @@ export default function Feed() {
                 post={post} 
                 index={index} 
                 autoOpenComments={post.id === highlightPostId}
+                currentUserId={user?.id}
+                onDelete={deleteCompletion}
+                isDeleting={isDeleting}
               />
             ))}
 
