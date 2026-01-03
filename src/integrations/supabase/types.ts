@@ -327,6 +327,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_view_profile: {
+        Args: { _profile_id: string; _viewer_id: string }
+        Returns: boolean
+      }
       create_group: {
         Args: { _category: string; _name: string }
         Returns: {
