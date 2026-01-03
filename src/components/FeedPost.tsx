@@ -116,7 +116,7 @@ export function FeedPost({ post, index, autoOpenComments = false, currentUserId,
                   <Trash2 size={16} />
                 </button>
               </AlertDialogTrigger>
-              <AlertDialogContent className="max-w-[calc(100%-2rem)] mx-4 rounded-2xl">
+              <AlertDialogContent className="w-[calc(100%-2rem)] max-w-md rounded-2xl">
                 <AlertDialogHeader>
                   <AlertDialogTitle>Delete this post?</AlertDialogTitle>
                   <AlertDialogDescription>
