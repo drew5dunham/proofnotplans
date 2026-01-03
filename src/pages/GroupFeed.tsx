@@ -1,7 +1,9 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, Users, Loader2 } from 'lucide-react';
+import { ArrowLeft, Users, Loader2, Check, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { useGroups } from '@/hooks/useGroups';
 import { Header } from '@/components/Header';
 import { BottomNav } from '@/components/BottomNav';
 import { FeedPost } from '@/components/FeedPost';
@@ -13,6 +15,27 @@ import type { DbCompletion } from '@/hooks/useGoals';
 export default function GroupFeed() {
   const { groupId } = useParams<{ groupId: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { acceptInvitation, declineInvitation, isAccepting, isDeclining } = useGroups();
+
+  // Check if user has a pending invitation to this group
+  const { data: pendingInvitation } = useQuery({
+    queryKey: ['pending-invitation', groupId, user?.id],
+    queryFn: async () => {
+      if (!groupId || !user) return null;
+      const { data, error } = await supabase
+        .from('group_members')
+        .select('*')
+        .eq('group_id', groupId)
+        .eq('user_id', user.id)
+        .eq('status', 'pending')
+        .maybeSingle();
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!groupId && !!user,
+  });
 
   // Fetch group details
   const { data: group, isLoading: loadingGroup } = useQuery({
@@ -125,6 +148,41 @@ export default function GroupFeed() {
       <Header title={group?.name || 'Group Feed'} />
 
       <main className="max-w-md mx-auto px-4">
+        {/* Pending invitation banner */}
+        {pendingInvitation && (
+          <div className="mb-4 p-4 bg-primary/10 rounded-2xl border border-primary/20">
+            <p className="font-medium text-sm mb-3">
+              You've been invited to join this group!
+            </p>
+            <div className="flex gap-2">
+              <Button 
+                size="sm" 
+                onClick={() => groupId && acceptInvitation(groupId)}
+                disabled={isAccepting || isDeclining}
+                className="flex-1"
+              >
+                <Check size={16} className="mr-1" />
+                {isAccepting ? 'Accepting...' : 'Accept'}
+              </Button>
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={() => {
+                  if (groupId) {
+                    declineInvitation(groupId);
+                    navigate('/profile');
+                  }
+                }}
+                disabled={isAccepting || isDeclining}
+                className="flex-1"
+              >
+                <X size={16} className="mr-1" />
+                {isDeclining ? 'Declining...' : 'Decline'}
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* Back button & group info */}
         <div className="flex items-center gap-3 mb-4">
           <Button variant="ghost" size="icon" onClick={() => navigate('/profile')}>
@@ -152,7 +210,7 @@ export default function GroupFeed() {
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
         ) : !feed || feed.length === 0 ? (
-          <div className="py-12 text-center border border-dashed border-border">
+          <div className="py-12 text-center border border-dashed border-border rounded-2xl">
             <Users size={32} className="mx-auto text-muted-foreground mb-2" />
             <p className="text-sm text-muted-foreground">No activity yet</p>
             <p className="text-xs text-muted-foreground mt-1">

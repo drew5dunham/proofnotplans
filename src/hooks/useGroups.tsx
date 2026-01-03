@@ -18,11 +18,12 @@ export interface DbGroupMember {
   user_id: string;
   invited_by: string | null;
   joined_at: string;
+  status: 'pending' | 'accepted' | 'declined';
 }
 
 export interface GroupWithMembers extends DbGroup {
   member_count: number;
-  members: { user_id: string; name: string | null }[];
+  members: { user_id: string; name: string | null; status: string }[];
 }
 
 export function useGroups() {
@@ -56,11 +57,12 @@ export function useGroups() {
 
       if (groupsError) throw groupsError;
 
-      // Fetch all members for these groups
+      // Fetch all members for these groups (only accepted members)
       const { data: allMembers, error: membersError } = await supabase
         .from('group_members')
-        .select('group_id, user_id')
-        .in('group_id', groupIds);
+        .select('group_id, user_id, status')
+        .in('group_id', groupIds)
+        .eq('status', 'accepted');
 
       if (membersError) throw membersError;
 
@@ -80,6 +82,7 @@ export function useGroups() {
           .map((m) => ({
             user_id: m.user_id,
             name: profileMap.get(m.user_id) || null,
+            status: m.status || 'accepted',
           }));
 
         return {
@@ -116,20 +119,39 @@ export function useGroups() {
     },
   });
 
-  // Invite a user to a group
+  // Invite a user to a group (creates pending membership + notification)
   const inviteToGroupMutation = useMutation({
-    mutationFn: async ({ groupId, userId }: { groupId: string; userId: string }) => {
+    mutationFn: async ({ groupId, userId, groupName }: { groupId: string; userId: string; groupName: string }) => {
       if (!user) throw new Error('Not authenticated');
 
+      // Create pending membership
       const { error } = await supabase
         .from('group_members')
         .insert({
           group_id: groupId,
           user_id: userId,
           invited_by: user.id,
+          status: 'pending',
         });
 
       if (error) throw error;
+
+      // Get inviter's profile name
+      const { data: inviterProfile } = await supabase
+        .from('profiles')
+        .select('name')
+        .eq('id', user.id)
+        .single();
+
+      // Create notification for the invited user
+      await supabase.from('notifications').insert({
+        user_id: userId,
+        actor_id: user.id,
+        type: 'group_invite',
+        title: `${inviterProfile?.name || 'Someone'} invited you to join "${groupName}"`,
+        body: 'Tap to view and respond',
+        reference_id: groupId,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['groups'] });
@@ -137,10 +159,57 @@ export function useGroups() {
     },
     onError: (error: Error) => {
       if (error.message.includes('duplicate')) {
-        toast({ title: 'Already a member', variant: 'destructive' });
+        toast({ title: 'Already invited or a member', variant: 'destructive' });
       } else {
         toast({ title: 'Failed to invite', variant: 'destructive' });
       }
+    },
+  });
+
+  // Accept group invitation
+  const acceptInvitationMutation = useMutation({
+    mutationFn: async (groupId: string) => {
+      if (!user) throw new Error('Not authenticated');
+
+      const { error } = await supabase
+        .from('group_members')
+        .update({ status: 'accepted' })
+        .eq('group_id', groupId)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['groups'] });
+      queryClient.invalidateQueries({ queryKey: ['pending-invitation'] });
+      toast({ title: 'You joined the group!' });
+    },
+    onError: () => {
+      toast({ title: 'Failed to accept invitation', variant: 'destructive' });
+    },
+  });
+
+  // Decline group invitation
+  const declineInvitationMutation = useMutation({
+    mutationFn: async (groupId: string) => {
+      if (!user) throw new Error('Not authenticated');
+
+      const { error } = await supabase
+        .from('group_members')
+        .delete()
+        .eq('group_id', groupId)
+        .eq('user_id', user.id)
+        .eq('status', 'pending');
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['groups'] });
+      queryClient.invalidateQueries({ queryKey: ['pending-invitation'] });
+      toast({ title: 'Invitation declined' });
+    },
+    onError: () => {
+      toast({ title: 'Failed to decline invitation', variant: 'destructive' });
     },
   });
 
@@ -189,9 +258,14 @@ export function useGroups() {
     groups: groupsQuery.data || [],
     isLoading: groupsQuery.isLoading,
     createGroup: createGroupMutation.mutate,
+    createGroupAsync: createGroupMutation.mutateAsync,
     inviteToGroup: inviteToGroupMutation.mutate,
+    acceptInvitation: acceptInvitationMutation.mutate,
+    declineInvitation: declineInvitationMutation.mutate,
     leaveGroup: leaveGroupMutation.mutate,
     deleteGroup: deleteGroupMutation.mutate,
     isCreating: createGroupMutation.isPending,
+    isAccepting: acceptInvitationMutation.isPending,
+    isDeclining: declineInvitationMutation.isPending,
   };
 }
