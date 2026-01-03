@@ -21,7 +21,7 @@ export function FriendsListDialog({ userId, userName }: FriendsListDialogProps) 
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <button className="stat-block cursor-pointer hover:bg-muted/50 transition-colors">
+        <button className="stat-block w-full h-full cursor-pointer hover:bg-muted/50 transition-colors">
           <div className="flex items-center gap-1 text-blue-400 mb-1">
             <Users size={18} />
           </div>
