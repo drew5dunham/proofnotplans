@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { BottomNav } from '@/components/BottomNav';
 import { GoalProgressSection } from '@/components/GoalProgressSection';
+import { FriendsListDialog } from '@/components/FriendsListDialog';
 import { isSampleUser, getSampleUserData } from '@/lib/sampleData';
 import type { GoalWithStats, DbCompletion } from '@/hooks/useGoals';
 
@@ -162,7 +163,7 @@ export default function UserProfile() {
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
           ) : (
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-4 gap-2">
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -173,7 +174,7 @@ export default function UserProfile() {
                   <Flame size={16} />
                 </div>
                 <span className="text-xl font-bold">{streak}</span>
-                <span className="text-xs text-muted-foreground">day streak</span>
+                <span className="text-xs text-muted-foreground">streak</span>
               </motion.div>
 
               <motion.div
@@ -186,7 +187,7 @@ export default function UserProfile() {
                   <Target size={16} />
                 </div>
                 <span className="text-xl font-bold">{actualGoals?.length || 0}</span>
-                <span className="text-xs text-muted-foreground">active goals</span>
+                <span className="text-xs text-muted-foreground">goals</span>
               </motion.div>
 
               <motion.div
@@ -199,8 +200,18 @@ export default function UserProfile() {
                   <Check size={16} />
                 </div>
                 <span className="text-xl font-bold">{totalCompleted}</span>
-                <span className="text-xs text-muted-foreground">completed</span>
+                <span className="text-xs text-muted-foreground">done</span>
               </motion.div>
+
+              {!isSample && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.25 }}
+                >
+                  <FriendsListDialog userId={userId} userName={userName} />
+                </motion.div>
+              )}
             </div>
           )}
         </div>
