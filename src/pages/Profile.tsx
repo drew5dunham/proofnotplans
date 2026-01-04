@@ -2,19 +2,22 @@ import { motion } from 'framer-motion';
 import { Flame, Target, Check, LogOut, Loader2, Settings } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useGoals, useCompletions } from '@/hooks/useGoals';
+import { useProfile } from '@/hooks/useProfile';
 import { BottomNav } from '@/components/BottomNav';
 import { Paywall } from '@/components/Paywall';
 import { GoalProgressSection } from '@/components/GoalProgressSection';
 import { GroupsSection } from '@/components/GroupsSection';
 import { FriendsListDialog } from '@/components/FriendsListDialog';
+import { AvatarUpload } from '@/components/AvatarUpload';
 import { Button } from '@/components/ui/button';
 
 export default function Profile() {
   const { user, signOut } = useAuth();
   const { goalsWithStats, isLoading: goalsLoading } = useGoals();
   const { data: completions, isLoading: completionsLoading } = useCompletions();
+  const { profile, isLoading: profileLoading } = useProfile();
 
-  const isLoading = goalsLoading || completionsLoading;
+  const isLoading = goalsLoading || completionsLoading || profileLoading;
   const totalCompleted = completions?.length || 0;
   
   // Calculate streak (consecutive days with completions)
@@ -48,7 +51,7 @@ export default function Profile() {
   };
 
   const streak = calculateStreak();
-  const userName = user?.user_metadata?.name || user?.email?.split('@')[0] || 'User';
+  const userName = profile?.name || user?.user_metadata?.name || user?.email?.split('@')[0] || 'User';
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -75,9 +78,11 @@ export default function Profile() {
         {/* User info */}
         <div className="p-6">
           <div className="flex items-center gap-4 mb-6">
-            <div className="w-20 h-20 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center text-3xl font-bold text-white">
-              {userName.charAt(0).toUpperCase()}
-            </div>
+            <AvatarUpload 
+              currentAvatarUrl={profile?.avatar_url} 
+              size="md"
+              editable={true}
+            />
             <div>
               <h2 className="text-2xl font-bold">{userName} 👋</h2>
               <p className="text-sm text-muted-foreground">{user?.email}</p>
