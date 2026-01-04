@@ -3,6 +3,7 @@ import { TrendingUp, Zap } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { BottomNav } from '@/components/BottomNav';
 import { Paywall } from '@/components/Paywall';
+import { UserAvatar } from '@/components/UserAvatar';
 
 const leaderboardData = {
   mostConsistent: [
@@ -49,9 +50,7 @@ function LeaderboardSection({ title, icon: Icon, data }: LeaderboardSectionProps
             <span className="w-6 text-sm font-medium text-muted-foreground">
               {index + 1}
             </span>
-            <div className="w-10 h-10 bg-gradient-to-br from-primary/50 to-accent/50 rounded-full flex items-center justify-center text-sm font-semibold">
-              {item.name.charAt(0)}
-            </div>
+            <UserAvatar name={item.name} size="md" />
             <div className="flex-1">
               <p className="text-sm font-medium">{item.name}</p>
               <p className="text-xs text-muted-foreground">{item.subtitle}</p>

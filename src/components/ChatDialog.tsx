@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Send, Loader2, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { UserAvatar } from '@/components/UserAvatar';
 import { useMessages, useSendMessage } from '@/hooks/useMessages';
 import { useAuth } from '@/hooks/useAuth';
 import { formatDistanceToNow } from 'date-fns';
@@ -62,9 +63,7 @@ export function ChatDialog({ friendId, friendName, onClose }: ChatDialogProps) {
         <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">
           <ArrowLeft size={18} />
         </Button>
-        <div className="w-8 h-8 bg-primary text-primary-foreground flex items-center justify-center text-sm font-semibold">
-          {friendName.charAt(0).toUpperCase()}
-        </div>
+        <UserAvatar name={friendName} size="sm" />
         <h1 className="font-semibold">{friendName}</h1>
       </header>
 

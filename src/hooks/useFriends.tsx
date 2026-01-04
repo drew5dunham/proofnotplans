@@ -2,9 +2,10 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 
-interface Friend {
+export interface Friend {
   id: string;
   name: string | null;
+  avatar_url?: string | null;
 }
 
 // Get accepted friends for a specific user
@@ -35,7 +36,7 @@ export function useFriends(userId?: string) {
       // Get profiles for all friends
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select('id, name')
+        .select('id, name, avatar_url')
         .in('id', friendIds);
 
       if (profilesError) throw profilesError;

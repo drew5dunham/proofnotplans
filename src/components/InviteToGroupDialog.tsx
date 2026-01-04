@@ -3,6 +3,7 @@ import { UserPlus, Search, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { UserAvatar } from '@/components/UserAvatar';
 import { useGroups } from '@/hooks/useGroups';
 import { useAllFriends } from '@/hooks/useEncouragements';
 import { supabase } from '@/integrations/supabase/client';
@@ -120,9 +121,7 @@ export function InviteToGroupDialog({ groupId, groupName }: InviteToGroupDialogP
                       className="flex items-center justify-between p-2 rounded-md hover:bg-muted/50 transition-colors"
                     >
                       <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 bg-primary text-primary-foreground flex items-center justify-center text-xs font-semibold rounded-full">
-                          {friend.name?.charAt(0).toUpperCase() || '?'}
-                        </div>
+                        <UserAvatar name={friend.name} size="xs" />
                         <span className="text-sm truncate">{friend.name || 'Unknown'}</span>
                       </div>
                       <Button

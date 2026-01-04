@@ -7,6 +7,7 @@ import { sendPushNotification } from '@/lib/pushNotifications';
 interface Friend {
   id: string;
   name: string | null;
+  avatar_url?: string | null;
 }
 
 // Sample friends for demo purposes
@@ -48,7 +49,7 @@ export function useAllFriends() {
       // Get friend profiles
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select('id, name')
+        .select('id, name, avatar_url')
         .in('id', friendIds);
 
       if (profilesError) throw profilesError;
@@ -106,7 +107,7 @@ export function useFriendsToEncourage() {
       // Get friend profiles
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select('id, name')
+        .select('id, name, avatar_url')
         .in('id', friendsWhoHaventPosted);
 
       if (profilesError) throw profilesError;

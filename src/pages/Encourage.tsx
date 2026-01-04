@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ChatDialog } from '@/components/ChatDialog';
 import { ReportGoalDialog } from '@/components/ReportGoalDialog';
+import { UserAvatar } from '@/components/UserAvatar';
 import { useAuth } from '@/hooks/useAuth';
 import { useGoals } from '@/hooks/useGoals';
 import { useHasPostedToday } from '@/hooks/useHasPostedToday';
@@ -258,9 +259,7 @@ export default function Encourage() {
                           checked={selectedFriends.has(friend.id)}
                           onCheckedChange={() => toggleFriend(friend.id)}
                         />
-                        <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center text-sm font-semibold text-white">
-                          {friend.name?.charAt(0).toUpperCase() || '?'}
-                        </div>
+                        <UserAvatar name={friend.name} avatarUrl={friend.avatar_url} size="md" />
                         <label 
                           htmlFor={friend.id}
                           className="flex-1 text-sm font-medium cursor-pointer"

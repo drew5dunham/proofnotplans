@@ -27,7 +27,7 @@ export interface DbCompletion {
   status: 'completed' | 'missed';
   group_id: string | null;
   goals?: DbGoal;
-  profiles?: { name: string | null };
+  profiles?: { name: string | null; avatar_url?: string | null };
 }
 
 export interface GoalWithStats extends DbGoal {
@@ -366,18 +366,18 @@ export function useFeed() {
       
       if (error) throw error;
       
-      // Fetch profile names for all unique user_ids
+      // Fetch profile names and avatars for all unique user_ids
       const userIds = [...new Set(data.map((c) => c.user_id))];
       const { data: profiles } = await supabase
         .from('profiles')
-        .select('id, name')
+        .select('id, name, avatar_url')
         .in('id', userIds);
       
-      const profileMap = new Map(profiles?.map((p) => [p.id, p.name]) || []);
+      const profileMap = new Map(profiles?.map((p) => [p.id, { name: p.name, avatar_url: p.avatar_url }]) || []);
       
       const realPosts = data.map((completion) => ({
         ...completion,
-        profiles: { name: profileMap.get(completion.user_id) || null },
+        profiles: profileMap.get(completion.user_id) || { name: null, avatar_url: null },
       })) as DbCompletion[];
 
       // Combine real posts with sample posts, real posts first

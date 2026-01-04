@@ -3,6 +3,7 @@ import { Send, Loader2, X, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
+import { UserAvatar } from '@/components/UserAvatar';
 import { useComments, useAddComment } from '@/hooks/useComments';
 import { useAuth } from '@/hooks/useAuth';
 import { useHasPostedToday } from '@/hooks/useHasPostedToday';
@@ -105,9 +106,11 @@ export function CommentsDrawer({
                     animate={{ opacity: 1, y: 0 }}
                     className="flex gap-3"
                   >
-                    <div className="w-8 h-8 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center text-xs font-semibold text-white flex-shrink-0">
-                      {comment.profiles?.name?.charAt(0).toUpperCase() || '?'}
-                    </div>
+                    <UserAvatar 
+                      name={comment.profiles?.name} 
+                      avatarUrl={comment.profiles?.avatar_url} 
+                      size="sm" 
+                    />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-baseline gap-2">
                         <span className="font-medium text-sm">
