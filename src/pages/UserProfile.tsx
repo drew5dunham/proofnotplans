@@ -38,21 +38,15 @@ export default function UserProfile() {
 
   // Fetch user's goals (skip for sample users)
   const { data: goals, isLoading: goalsLoading } = useQuery({
-    queryKey: ['user-goals', userId, isOwnProfile],
+    queryKey: ['user-goals', userId],
     queryFn: async () => {
-      let query = supabase
+      const { data, error } = await supabase
         .from('goals')
         .select('*')
         .eq('user_id', userId!)
+        .eq('is_active', true)
         .order('created_at', { ascending: false });
-
-      // For your own profile we only show active goals; for other users we include inactive goals
-      // so their reported history still has context.
-      if (isOwnProfile) {
-        query = query.eq('is_active', true);
-      }
-
-      const { data, error } = await query;
+      
       if (error) throw error;
       return data;
     },
