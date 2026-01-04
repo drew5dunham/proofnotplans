@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Loader2, Target, Plus, Users, UserPlus } from 'lucide-react';
+import { Loader2, Target, Plus, Users, UserPlus, X } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useFeed, useCompletions, useGoals, DbCompletion } from '@/hooks/useGoals';
 import { useAuth } from '@/hooks/useAuth';
@@ -36,6 +36,14 @@ export default function Feed() {
   const { data: friendCount } = useFriendCount();
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [membersOpen, setMembersOpen] = useState(false);
+  const [friendsPromptDismissed, setFriendsPromptDismissed] = useState(() => {
+    return sessionStorage.getItem('friendsPromptDismissed') === 'true';
+  });
+
+  const dismissFriendsPrompt = () => {
+    sessionStorage.setItem('friendsPromptDismissed', 'true');
+    setFriendsPromptDismissed(true);
+  };
 
   // Clear the post param after initial load to clean up URL
   useEffect(() => {
@@ -182,9 +190,16 @@ export default function Feed() {
         )}
 
         {/* Add friends prompt for users with no friends */}
-        {user && hasGoals && !hasFriends && (
-          <div className="mb-4 p-4 bg-blue-500/10 rounded-2xl">
-            <div className="flex items-start gap-3">
+        {user && !hasFriends && !friendsPromptDismissed && (
+          <div className="mb-4 p-4 bg-blue-500/10 rounded-2xl relative">
+            <button
+              onClick={dismissFriendsPrompt}
+              className="absolute top-3 right-3 p-1 text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted/50 transition-colors"
+              aria-label="Dismiss"
+            >
+              <X size={16} />
+            </button>
+            <div className="flex items-start gap-3 pr-6">
               <div className="p-2 bg-blue-500/20 text-blue-400 rounded-xl">
                 <Users size={20} />
               </div>
