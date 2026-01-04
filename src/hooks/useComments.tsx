@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { sendPushNotification } from '@/lib/pushNotifications';
 
 export interface Comment {
   id: string;
@@ -158,14 +159,20 @@ export function useAddComment() {
           .eq('id', user.id)
           .single();
 
+        const title = `${profile?.name || 'Someone'} commented on your post`;
+        const body = data.content.substring(0, 100);
+
         await supabase.from('notifications').insert({
           user_id: data.post_author_id,
           type: 'comment',
-          title: `${profile?.name || 'Someone'} commented on your post`,
-          body: data.content.substring(0, 100),
+          title,
+          body,
           reference_id: data.completion_id,
           actor_id: user.id
         });
+
+        // Send push notification
+        sendPushNotification(data.post_author_id, title, body, '/');
       }
     },
     onSuccess: (_, variables) => {

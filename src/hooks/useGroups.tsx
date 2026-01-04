@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
+import { sendPushNotification } from '@/lib/pushNotifications';
 import type { Category } from '@/types';
 
 export interface DbGroup {
@@ -143,15 +144,21 @@ export function useGroups() {
         .eq('id', user.id)
         .single();
 
+      const title = `${inviterProfile?.name || 'Someone'} invited you to join "${groupName}"`;
+      const body = 'Tap to view and respond';
+
       // Create notification for the invited user
       await supabase.from('notifications').insert({
         user_id: userId,
         actor_id: user.id,
         type: 'group_invite',
-        title: `${inviterProfile?.name || 'Someone'} invited you to join "${groupName}"`,
-        body: 'Tap to view and respond',
+        title,
+        body,
         reference_id: groupId,
       });
+
+      // Send push notification
+      sendPushNotification(userId, title, body, '/');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['groups'] });

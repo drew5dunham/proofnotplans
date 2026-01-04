@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { sendPushNotification } from '@/lib/pushNotifications';
 
 interface SearchResult {
   id: string;
@@ -57,6 +58,9 @@ export function useSendFriendRequest() {
         .eq('id', user.id)
         .single();
 
+      const title = `${profile?.name || 'Someone'} wants to be your friend`;
+      const body = 'Accept or ignore this friend request';
+
       // Create notification for the recipient
       const { error: notifError } = await supabase
         .from('notifications')
@@ -64,12 +68,15 @@ export function useSendFriendRequest() {
           user_id: friendId,
           actor_id: user.id,
           type: 'friend_request',
-          title: `${profile?.name || 'Someone'} wants to be your friend`,
-          body: 'Accept or ignore this friend request',
+          title,
+          body,
           reference_id: user.id // The sender's user ID for accepting/ignoring
         });
 
       if (notifError) throw notifError;
+
+      // Send push notification
+      sendPushNotification(friendId, title, body, '/');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['search-users'] });
