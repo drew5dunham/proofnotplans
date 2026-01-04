@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Send, Loader2, ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import { useMessages, useSendMessage } from '@/hooks/useMessages';
 import { useAuth } from '@/hooks/useAuth';
 import { format, isToday, isYesterday, differenceInMinutes } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
+import type { Message } from '@/hooks/useMessages';
 
 // Helper to group messages by time (5 min threshold)
 function shouldShowTimestamp(currentMsg: { created_at: string }, prevMsg?: { created_at: string }) {
@@ -35,9 +36,6 @@ export default function Chat() {
   const { user } = useAuth();
   
   const friendName = searchParams.get('name') || 'Friend';
-  const initialEmoji = searchParams.get('emoji');
-  const initialMessage = searchParams.get('message');
-  const initialTimestamp = searchParams.get('timestamp');
   
   const { data: messages, isLoading } = useMessages(friendId || null);
   const sendMessage = useSendMessage();
@@ -45,47 +43,10 @@ export default function Chat() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Combine initial encouragement with messages
-  const allMessages = useMemo(() => {
-    const result: Array<{
-      id: string;
-      sender_id: string;
-      content: string;
-      created_at: string;
-      isEncouragement?: boolean;
-      emoji?: string | null;
-    }> = [];
-    
-    // Add initial encouragement as first message if present
-    if (initialTimestamp && friendId) {
-      result.push({
-        id: 'encouragement-initial',
-        sender_id: friendId,
-        content: initialMessage || '',
-        created_at: initialTimestamp,
-        isEncouragement: true,
-        emoji: initialEmoji
-      });
-    }
-    
-    // Add regular messages
-    if (messages) {
-      result.push(...messages.map(m => ({
-        ...m,
-        isEncouragement: false
-      })));
-    }
-    
-    // Sort by created_at
-    result.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-    
-    return result;
-  }, [messages, initialEmoji, initialMessage, initialTimestamp, friendId]);
-
   // Scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [allMessages]);
+  }, [messages]);
 
   // Focus input on mount
   useEffect(() => {
@@ -143,7 +104,7 @@ export default function Chat() {
           <div className="flex justify-center py-8">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
-        ) : allMessages.length === 0 ? (
+        ) : !messages || messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
             <UserAvatar name={friendName} size="lg" />
             <p className="mt-3 font-semibold">{friendName}</p>
@@ -151,10 +112,10 @@ export default function Chat() {
           </div>
         ) : (
           <AnimatePresence initial={false}>
-            {allMessages.map((message, index) => {
+            {messages.map((message, index) => {
               const isMe = message.sender_id === user?.id;
-              const prevMessage = allMessages[index - 1];
-              const nextMessage = allMessages[index + 1];
+              const prevMessage = messages[index - 1];
+              const nextMessage = messages[index + 1];
               const showTimestamp = shouldShowTimestamp(message, prevMessage);
               
               // Determine if this is the last message in a group from same sender
@@ -205,31 +166,10 @@ export default function Chat() {
                             : `rounded-2xl ${isLastInGroup ? 'rounded-bl-sm' : ''} ${isFirstInGroup ? '' : 'rounded-tl-lg'}`
                         }`}
                       >
-                        {/* Encouragement badge */}
-                        {message.isEncouragement && (
-                          <div className="flex items-center gap-1.5 mb-1">
-                            {message.emoji && (
-                              <span className="text-lg">{message.emoji}</span>
-                            )}
-                            <span className={`text-[10px] font-semibold uppercase tracking-wide ${
-                              isMe ? 'text-primary-foreground/70' : 'text-primary'
-                            }`}>
-                              Encouragement
-                            </span>
-                          </div>
-                        )}
-                        
                         {/* Message content */}
-                        {message.content && (
-                          <p className="text-[15px] leading-snug break-words">
-                            {message.isEncouragement ? `"${message.content}"` : message.content}
-                          </p>
-                        )}
-                        
-                        {/* Show emoji only if no message content */}
-                        {message.isEncouragement && !message.content && message.emoji && (
-                          <span className="text-3xl">{message.emoji}</span>
-                        )}
+                        <p className="text-[15px] leading-snug break-words">
+                          {message.content}
+                        </p>
                       </div>
                       
                       {/* Bubble tail for last message in group */}
