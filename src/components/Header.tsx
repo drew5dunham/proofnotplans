@@ -1,4 +1,4 @@
-import { Flame, Loader2 } from 'lucide-react';
+import { Flame, Loader2, Check, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import {
@@ -8,8 +8,10 @@ import {
 } from '@/components/ui/popover';
 import { useReceivedEncouragements, useUnreadEncouragementCount } from '@/hooks/useEncouragements';
 import { useNotifications, useUnreadNotificationCount, useMarkNotificationRead } from '@/hooks/useComments';
+import { useAcceptFriendRequest, useIgnoreFriendRequest } from '@/hooks/useFriendRequests';
 import { formatDistanceToNow } from 'date-fns';
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 interface HeaderProps {
   title: string;
@@ -24,8 +26,13 @@ export function Header({ title, rightAction }: HeaderProps) {
   const { data: notifications, isLoading: loadingNotifications } = useNotifications();
   const { data: unreadNotificationCount } = useUnreadNotificationCount();
   const markNotificationRead = useMarkNotificationRead();
+  const acceptFriendRequest = useAcceptFriendRequest();
+  const ignoreFriendRequest = useIgnoreFriendRequest();
 
   const handleNotificationClick = (notif: any) => {
+    // Don't navigate for friend requests - they have action buttons
+    if (notif.type === 'friend_request') return;
+    
     // Mark as read
     if (!notif.read_at) {
       markNotificationRead.mutate(notif.id);
@@ -39,6 +46,30 @@ export function Header({ title, rightAction }: HeaderProps) {
       } else if (notif.type === 'comment' || notif.type === 'like') {
         navigate(`/?post=${notif.reference_id}`);
       }
+    }
+  };
+
+  const handleAcceptFriend = async (notif: any) => {
+    try {
+      await acceptFriendRequest.mutateAsync({ 
+        senderId: notif.reference_id, 
+        notificationId: notif.id 
+      });
+      toast.success('Friend request accepted!');
+    } catch (error) {
+      toast.error('Failed to accept friend request');
+    }
+  };
+
+  const handleIgnoreFriend = async (notif: any) => {
+    try {
+      await ignoreFriendRequest.mutateAsync({ 
+        senderId: notif.reference_id, 
+        notificationId: notif.id 
+      });
+      toast.success('Friend request ignored');
+    } catch (error) {
+      toast.error('Failed to ignore friend request');
     }
   };
 
@@ -76,10 +107,12 @@ export function Header({ title, rightAction }: HeaderProps) {
                   </div>
                 ) : (
                   <div className="p-3 space-y-2">
-                    {/* Real notifications (comments, group invites, etc.) */}
+                    {/* Real notifications */}
                     {notifications && notifications.map((notif: any) => {
-                      const isClickable = notif.reference_id && 
+                      const isFriendRequest = notif.type === 'friend_request' && !notif.read_at;
+                      const isClickable = !isFriendRequest && notif.reference_id && 
                         (notif.type === 'comment' || notif.type === 'like' || notif.type === 'group_invite');
+                      
                       return (
                         <div 
                           key={notif.id} 
@@ -89,9 +122,35 @@ export function Header({ title, rightAction }: HeaderProps) {
                           } ${!notif.read_at ? 'bg-primary/10' : ''}`}
                         >
                           <p className="font-medium text-sm">{notif.title}</p>
-                          {notif.body && (
+                          {notif.body && !isFriendRequest && (
                             <p className="text-muted-foreground text-sm mt-0.5 truncate">"{notif.body}"</p>
                           )}
+                          
+                          {/* Friend request action buttons */}
+                          {isFriendRequest && (
+                            <div className="flex gap-2 mt-2">
+                              <Button
+                                size="sm"
+                                className="flex-1 gap-1"
+                                onClick={(e) => { e.stopPropagation(); handleAcceptFriend(notif); }}
+                                disabled={acceptFriendRequest.isPending || ignoreFriendRequest.isPending}
+                              >
+                                <Check size={14} />
+                                Accept
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="flex-1 gap-1"
+                                onClick={(e) => { e.stopPropagation(); handleIgnoreFriend(notif); }}
+                                disabled={acceptFriendRequest.isPending || ignoreFriendRequest.isPending}
+                              >
+                                <X size={14} />
+                                Ignore
+                              </Button>
+                            </div>
+                          )}
+                          
                           <p className="text-xs text-muted-foreground mt-1">
                             {formatDistanceToNow(new Date(notif.created_at), { addSuffix: true })}
                           </p>

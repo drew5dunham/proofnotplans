@@ -351,6 +351,13 @@ export type Database = {
         Args: { _group_id: string; _user_id: string }
         Returns: boolean
       }
+      search_users_by_name: {
+        Args: { _current_user_id: string; _search_term: string }
+        Returns: {
+          id: string
+          name: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
