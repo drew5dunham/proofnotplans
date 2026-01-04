@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Loader2, Target, Plus } from 'lucide-react';
+import { Loader2, Target, Plus, Users } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useFeed, useCompletions, useGoals, DbCompletion } from '@/hooks/useGoals';
 import { useAuth } from '@/hooks/useAuth';
@@ -13,6 +13,14 @@ import { Paywall } from '@/components/Paywall';
 import { Button } from '@/components/ui/button';
 import { ReportGoalDialog } from '@/components/ReportGoalDialog';
 import { GroupFilter } from '@/components/GroupFilter';
+import { UserAvatar } from '@/components/UserAvatar';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Link } from 'react-router-dom';
 import { isToday } from 'date-fns';
 
@@ -25,6 +33,7 @@ export default function Feed() {
   const { goals, deleteCompletion, isDeleting } = useGoals();
   const { groups } = useGroups();
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+  const [membersOpen, setMembersOpen] = useState(false);
 
   // Clear the post param after initial load to clean up URL
   useEffect(() => {
@@ -124,6 +133,16 @@ export default function Feed() {
         {/* Group Filter */}
         <div className="mb-4">
           <GroupFilter selectedGroupId={selectedGroupId} onSelectGroup={setSelectedGroupId} />
+          {selectedGroup && (
+            <div className="mt-2 flex items-center gap-2">
+              <button
+                onClick={() => setMembersOpen(true)}
+                className="text-xs text-primary hover:text-primary/80 underline cursor-pointer transition-colors"
+              >
+                {selectedGroup.member_count} member{selectedGroup.member_count !== 1 ? 's' : ''}
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Report prompt for users who haven't posted today */}
@@ -193,6 +212,38 @@ export default function Feed() {
 
       <BottomNav />
       <Paywall />
+
+      {/* Group members modal */}
+      <Dialog open={membersOpen} onOpenChange={setMembersOpen}>
+        <DialogContent className="max-w-[360px] rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Users size={18} />
+              {selectedGroup?.name} Members
+            </DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="max-h-[300px]">
+            <div className="space-y-2">
+              {selectedGroup?.members.map((member) => (
+                <div
+                  key={member.user_id}
+                  className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50"
+                >
+                  <UserAvatar name={member.name || undefined} size="sm" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">
+                      {member.name || 'Unknown'}
+                    </p>
+                    {member.user_id === selectedGroup?.created_by && (
+                      <p className="text-xs text-muted-foreground">Creator</p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
