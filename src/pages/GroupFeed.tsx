@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, Users, Loader2, Check, X } from 'lucide-react';
@@ -8,7 +9,15 @@ import { Header } from '@/components/Header';
 import { BottomNav } from '@/components/BottomNav';
 import { FeedPost } from '@/components/FeedPost';
 import { CategoryIcon, getCategoryLabel } from '@/components/CategoryIcon';
+import { UserAvatar } from '@/components/UserAvatar';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { InviteToGroupDialog } from '@/components/InviteToGroupDialog';
 import type { Category } from '@/types';
 import type { DbCompletion } from '@/hooks/useGoals';
@@ -18,6 +27,7 @@ export default function GroupFeed() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { acceptInvitation, declineInvitation, isAccepting, isDeclining } = useGroups();
+  const [membersOpen, setMembersOpen] = useState(false);
 
   // Check if user has a pending invitation to this group
   const { data: pendingInvitation } = useQuery({
@@ -63,12 +73,28 @@ export default function GroupFeed() {
       const { data, error } = await supabase
         .from('group_members')
         .select('user_id')
-        .eq('group_id', groupId);
+        .eq('group_id', groupId)
+        .eq('status', 'accepted');
 
       if (error) throw error;
       return data?.map((m) => m.user_id) || [];
     },
     enabled: !!groupId,
+  });
+
+  const { data: memberProfiles } = useQuery({
+    queryKey: ['group-member-profiles', groupId, JSON.stringify(members)],
+    queryFn: async () => {
+      if (!members || members.length === 0) return [];
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, name, avatar_url')
+        .in('id', members);
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!members && members.length > 0,
   });
 
   // Fetch feed: public goals in the group's category for group members
@@ -198,9 +224,13 @@ export default function GroupFeed() {
                     <CategoryIcon category={group.category as Category} size={12} />
                     <span>{getCategoryLabel(group.category as Category)}</span>
                   </div>
-                  <span className="text-xs text-muted-foreground">
+                  <button
+                    type="button"
+                    onClick={() => setMembersOpen(true)}
+                    className="text-xs text-primary hover:text-primary/80 underline cursor-pointer transition-colors"
+                  >
                     {members?.length || 0} member{(members?.length || 0) !== 1 ? 's' : ''}
-                  </span>
+                  </button>
                 </div>
               </div>
               {/* Invite button - only show for accepted members */}
@@ -234,6 +264,33 @@ export default function GroupFeed() {
       </main>
 
       <BottomNav />
+
+      <Dialog open={membersOpen} onOpenChange={setMembersOpen}>
+        <DialogContent className="max-w-[360px] rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Users size={18} />
+              Members
+            </DialogTitle>
+          </DialogHeader>
+
+          <ScrollArea className="max-h-[300px]">
+            <div className="space-y-2">
+              {(memberProfiles || []).map((p) => (
+                <div
+                  key={p.id}
+                  className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50"
+                >
+                  <UserAvatar name={p.name} avatarUrl={p.avatar_url} size="sm" />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium truncate">{p.name || 'Unknown'}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
