@@ -209,7 +209,7 @@ export default function Encourage() {
                         />
                       ) : (
                         <Button asChild size="sm" className="mt-3 rounded-full">
-                          <Link to="/goals">Add Goals First</Link>
+                          <Link to="/goals?add=true">Add Goals First</Link>
                         </Button>
                       )}
                     </div>

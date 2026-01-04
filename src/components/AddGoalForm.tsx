@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, X, Loader2, Globe, Lock } from 'lucide-react';
 import { CategoryIcon, getCategoryLabel } from './CategoryIcon';
@@ -6,17 +6,27 @@ import { useGoals } from '@/hooks/useGoals';
 import type { Category } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useSearchParams } from 'react-router-dom';
 
 const categories: Category[] = ['fitness', 'learning', 'creative', 'health', 'work', 'personal'];
 
 type Visibility = 'public' | 'private';
 
 export function AddGoalForm() {
-  const [isOpen, setIsOpen] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const startOpen = searchParams.get('add') === 'true';
+  const [isOpen, setIsOpen] = useState(startOpen);
   const [goalName, setGoalName] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<Category>('personal');
   const [visibility, setVisibility] = useState<Visibility>('public');
   const { addGoal, isAdding, goals } = useGoals();
+
+  // Clear the query param when form opens
+  useEffect(() => {
+    if (startOpen && isOpen) {
+      setSearchParams({}, { replace: true });
+    }
+  }, [startOpen, isOpen, setSearchParams]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
