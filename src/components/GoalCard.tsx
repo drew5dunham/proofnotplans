@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Check, X, Camera, Type, Loader2 } from 'lucide-react';
+import { Check, X, Camera, Type, Loader2, Image } from 'lucide-react';
 import { CategoryIcon, getCategoryLabel } from './CategoryIcon';
 import { supabase } from '@/integrations/supabase/client';
 import { useGoals, DbGoal, GoalWithStats } from '@/hooks/useGoals';
@@ -31,7 +31,9 @@ export function GoalCard({ goal, showStats = false }: GoalCardProps) {
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showPhotoOptions, setShowPhotoOptions] = useState(false);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
   const { removeGoal, completeGoal } = useGoals();
   const { toast } = useToast();
 
@@ -72,8 +74,11 @@ export function GoalCard({ goal, showStats = false }: GoalCardProps) {
     }
     setPhotoPreview(null);
     setAddPhoto(false);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+    if (cameraInputRef.current) {
+      cameraInputRef.current.value = '';
+    }
+    if (galleryInputRef.current) {
+      galleryInputRef.current.value = '';
     }
   };
 
@@ -237,10 +242,17 @@ export function GoalCard({ goal, showStats = false }: GoalCardProps) {
       </motion.div>
 
       <input
-        ref={fileInputRef}
+        ref={cameraInputRef}
         type="file"
         accept="image/*"
         capture="environment"
+        onChange={handlePhotoSelect}
+        className="hidden"
+      />
+      <input
+        ref={galleryInputRef}
+        type="file"
+        accept="image/*"
         onChange={handlePhotoSelect}
         className="hidden"
       />
@@ -337,7 +349,7 @@ export function GoalCard({ goal, showStats = false }: GoalCardProps) {
                 <span className="text-xs">Caption</span>
               </button>
               <button
-                onClick={() => fileInputRef.current?.click()}
+                onClick={() => setShowPhotoOptions(true)}
                 className={`flex-1 p-3 rounded-xl transition-colors flex flex-col items-center gap-1 ${
                   addPhoto ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground hover:text-foreground'
                 }`}
@@ -346,6 +358,31 @@ export function GoalCard({ goal, showStats = false }: GoalCardProps) {
                 <span className="text-xs">Photo</span>
               </button>
             </div>
+
+            {showPhotoOptions && !photoPreview && (
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    cameraInputRef.current?.click();
+                    setShowPhotoOptions(false);
+                  }}
+                  className="flex-1 p-3 rounded-xl bg-muted hover:bg-muted/80 transition-colors flex flex-col items-center gap-1"
+                >
+                  <Camera size={20} />
+                  <span className="text-xs">Take Photo</span>
+                </button>
+                <button
+                  onClick={() => {
+                    galleryInputRef.current?.click();
+                    setShowPhotoOptions(false);
+                  }}
+                  className="flex-1 p-3 rounded-xl bg-muted hover:bg-muted/80 transition-colors flex flex-col items-center gap-1"
+                >
+                  <Image size={20} />
+                  <span className="text-xs">Camera Roll</span>
+                </button>
+              </div>
+            )}
 
             {photoPreview && (
               <div className="relative">

@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Check, X, Camera, Type, Loader2, ChevronRight, Users } from 'lucide-react';
+import { Check, X, Camera, Type, Loader2, ChevronRight, Users, Image } from 'lucide-react';
 import { CategoryIcon, getCategoryLabel } from './CategoryIcon';
 import { supabase } from '@/integrations/supabase/client';
 import { useGoals, DbGoal } from '@/hooks/useGoals';
@@ -36,7 +36,9 @@ export function ReportGoalDialog({ trigger }: ReportGoalDialogProps) {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showPhotoOptions, setShowPhotoOptions] = useState(false);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
   const { goals, completeGoal } = useGoals();
   const { groups } = useGroups();
   const { toast } = useToast();
@@ -75,8 +77,11 @@ export function ReportGoalDialog({ trigger }: ReportGoalDialogProps) {
     }
     setPhotoPreview(null);
     setAddPhoto(false);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+    if (cameraInputRef.current) {
+      cameraInputRef.current.value = '';
+    }
+    if (galleryInputRef.current) {
+      galleryInputRef.current.value = '';
     }
   };
 
@@ -211,10 +216,17 @@ export function ReportGoalDialog({ trigger }: ReportGoalDialogProps) {
   return (
     <>
       <input
-        ref={fileInputRef}
+        ref={cameraInputRef}
         type="file"
         accept="image/*"
         capture="environment"
+        onChange={handlePhotoSelect}
+        className="hidden"
+      />
+      <input
+        ref={galleryInputRef}
+        type="file"
+        accept="image/*"
         onChange={handlePhotoSelect}
         className="hidden"
       />
@@ -391,7 +403,7 @@ export function ReportGoalDialog({ trigger }: ReportGoalDialogProps) {
                   <span className="text-xs">Caption</span>
                 </button>
                 <button
-                  onClick={() => fileInputRef.current?.click()}
+                  onClick={() => setShowPhotoOptions(true)}
                   className={`flex-1 p-3 border transition-colors flex flex-col items-center gap-1 ${
                     addPhoto ? 'border-accent bg-accent/10' : 'border-border hover:border-foreground/20'
                   }`}
@@ -400,6 +412,31 @@ export function ReportGoalDialog({ trigger }: ReportGoalDialogProps) {
                   <span className="text-xs">Photo</span>
                 </button>
               </div>
+
+              {showPhotoOptions && !photoPreview && (
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      cameraInputRef.current?.click();
+                      setShowPhotoOptions(false);
+                    }}
+                    className="flex-1 p-3 border border-border hover:border-foreground/20 transition-colors flex flex-col items-center gap-1"
+                  >
+                    <Camera size={20} />
+                    <span className="text-xs">Take Photo</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      galleryInputRef.current?.click();
+                      setShowPhotoOptions(false);
+                    }}
+                    className="flex-1 p-3 border border-border hover:border-foreground/20 transition-colors flex flex-col items-center gap-1"
+                  >
+                    <Image size={20} />
+                    <span className="text-xs">Camera Roll</span>
+                  </button>
+                </div>
+              )}
 
               {photoPreview && (
                 <div className="relative">
