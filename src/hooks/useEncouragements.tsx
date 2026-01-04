@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { startOfDay } from 'date-fns';
+import { sendPushNotification } from '@/lib/pushNotifications';
 
 interface Friend {
   id: string;
@@ -146,6 +147,19 @@ export function useSendEncouragement() {
       });
 
       if (error) throw error;
+
+      // Get sender's name for push notification
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('name')
+        .eq('id', user.id)
+        .single();
+
+      const title = `${profile?.name || 'A friend'} sent you encouragement!`;
+      const body = data.message || `${data.emoji || '💪'} Keep going!`;
+
+      // Send push notification
+      sendPushNotification(data.recipient_id, title, body, '/encourage');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['encouragements'] });
