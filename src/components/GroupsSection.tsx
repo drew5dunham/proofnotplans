@@ -88,15 +88,9 @@ export function GroupsSection() {
                       <CategoryIcon category={group.category as Category} size={12} />
                       <span>{getCategoryLabel(group.category as Category)}</span>
                     </div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setViewMembersGroup(group);
-                      }}
-                      className="text-xs text-primary hover:text-primary/80 underline cursor-pointer transition-colors"
-                    >
+                    <span className="text-xs text-muted-foreground">
                       {group.member_count} member{group.member_count !== 1 ? 's' : ''}
-                    </button>
+                    </span>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -120,7 +114,12 @@ export function GroupsSection() {
               {expandedGroup === group.id && (
                 <div className="px-3 pb-3 border-t border-border pt-3 space-y-3">
                   <div>
-                    <p className="text-xs font-medium text-muted-foreground mb-2">Members</p>
+                    <button
+                      onClick={() => setViewMembersGroup(group)}
+                      className="text-xs font-medium text-primary hover:text-primary/80 underline cursor-pointer transition-colors mb-2"
+                    >
+                      {group.member_count} member{group.member_count !== 1 ? 's' : ''}
+                    </button>
                     <div className="flex flex-wrap gap-1">
                       {group.members.map((member) => (
                         <span
