@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Loader2, Send, Inbox, MessageCircle } from 'lucide-react';
+import { Loader2, Send, Inbox, MessageCircle, Lock, Target, Plus } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { BottomNav } from '@/components/BottomNav';
 import { Paywall } from '@/components/Paywall';
@@ -8,7 +9,10 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ChatDialog } from '@/components/ChatDialog';
+import { ReportGoalDialog } from '@/components/ReportGoalDialog';
 import { useAuth } from '@/hooks/useAuth';
+import { useGoals } from '@/hooks/useGoals';
+import { useHasPostedToday } from '@/hooks/useHasPostedToday';
 import { 
   useFriendsToEncourage, 
   useSendEncouragement, 
@@ -30,6 +34,8 @@ interface ChatState {
 
 export default function Encourage() {
   const { user } = useAuth();
+  const { goals } = useGoals();
+  const { hasPostedToday, isLoading: loadingPosted } = useHasPostedToday();
   const { data: friends, isLoading: loadingFriends } = useFriendsToEncourage();
   const { data: receivedEncouragements, isLoading: loadingReceived } = useReceivedEncouragements();
   const { data: unreadCount } = useUnreadEncouragementCount();
@@ -176,7 +182,40 @@ export default function Encourage() {
           </TabsList>
 
           <TabsContent value="send">
-            {loadingFriends ? (
+            {/* Gate: Must post today to send encouragements */}
+            {!hasPostedToday && !loadingPosted ? (
+              <div className="py-8 text-center">
+                <div className="mb-4 p-4 bg-primary/10 rounded-2xl">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-primary/20 text-primary rounded-xl">
+                      <Target size={20} />
+                    </div>
+                    <div className="flex-1 text-left">
+                      <p className="font-semibold text-foreground text-sm">
+                        Post first to encourage friends
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Report on a goal today to unlock the ability to send encouragements.
+                      </p>
+                      {goals && goals.length > 0 ? (
+                        <ReportGoalDialog 
+                          trigger={
+                            <Button size="sm" className="mt-3 rounded-full">
+                              <Plus size={16} className="mr-1.5" />
+                              Report Now
+                            </Button>
+                          }
+                        />
+                      ) : (
+                        <Button asChild size="sm" className="mt-3 rounded-full">
+                          <Link to="/goals">Add Goals First</Link>
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : loadingFriends || loadingPosted ? (
               <div className="py-12 flex justify-center">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>

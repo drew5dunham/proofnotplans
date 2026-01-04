@@ -1,13 +1,15 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Loader2, X } from 'lucide-react';
+import { Send, Loader2, X, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { useComments, useAddComment } from '@/hooks/useComments';
 import { useAuth } from '@/hooks/useAuth';
+import { useHasPostedToday } from '@/hooks/useHasPostedToday';
 import { formatDistanceToNow } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from '@/hooks/use-toast';
+import { Link } from 'react-router-dom';
 
 interface CommentsDrawerProps {
   isOpen: boolean;
@@ -25,6 +27,7 @@ export function CommentsDrawer({
   goalName 
 }: CommentsDrawerProps) {
   const { user } = useAuth();
+  const { hasPostedToday } = useHasPostedToday();
   const { data: comments, isLoading } = useComments(isOpen ? completionId : null);
   const addComment = useAddComment();
   const [newComment, setNewComment] = useState('');
@@ -133,28 +136,38 @@ export function CommentsDrawer({
 
         {/* Comment input */}
         <div className="border-t border-border p-4">
-          <div className="flex gap-2">
-            <Input
-              ref={inputRef}
-              placeholder="Add a comment..."
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              onKeyDown={handleKeyDown}
-              maxLength={500}
-              className="flex-1"
-            />
-            <Button 
-              onClick={handleSubmit} 
-              disabled={!newComment.trim() || addComment.isPending}
-              size="icon"
-            >
-              {addComment.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Send className="h-4 w-4" />
-              )}
-            </Button>
-          </div>
+          {!hasPostedToday ? (
+            <div className="flex items-center justify-center gap-2 text-muted-foreground text-sm py-2">
+              <Lock size={14} />
+              <span>Post a goal update to comment</span>
+              <Link to="/" className="text-primary underline hover:no-underline" onClick={onClose}>
+                Report now
+              </Link>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <Input
+                ref={inputRef}
+                placeholder="Add a comment..."
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                onKeyDown={handleKeyDown}
+                maxLength={500}
+                className="flex-1"
+              />
+              <Button 
+                onClick={handleSubmit} 
+                disabled={!newComment.trim() || addComment.isPending}
+                size="icon"
+              >
+                {addComment.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+          )}
         </div>
       </DrawerContent>
     </Drawer>
