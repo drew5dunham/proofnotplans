@@ -34,6 +34,28 @@ export function useMessages(friendId: string | null) {
     enabled: !!user && !!friendId
   });
 
+  // Mark messages as read when viewing this conversation
+  useEffect(() => {
+    if (!user || !friendId || !query.data) return;
+
+    const unreadMessages = query.data.filter(
+      msg => msg.sender_id === friendId && !msg.read_at
+    );
+
+    if (unreadMessages.length > 0) {
+      supabase
+        .from('messages')
+        .update({ read_at: new Date().toISOString() })
+        .eq('sender_id', friendId)
+        .eq('recipient_id', user.id)
+        .is('read_at', null)
+        .then(() => {
+          // Invalidate conversation queries to update unread counts
+          queryClient.invalidateQueries({ queryKey: ['conversations'] });
+        });
+    }
+  }, [user, friendId, query.data, queryClient]);
+
   // Set up real-time subscription
   useEffect(() => {
     if (!user || !friendId) return;
