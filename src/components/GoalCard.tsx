@@ -1,9 +1,10 @@
 import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Check, X, Camera, Type, Loader2, Image } from 'lucide-react';
+import { Check, X, Camera, Type, Loader2, Image, Clock } from 'lucide-react';
 import { CategoryIcon, getCategoryLabel } from './CategoryIcon';
 import { supabase } from '@/integrations/supabase/client';
 import { useGoals, DbGoal, GoalWithStats } from '@/hooks/useGoals';
+import { useTodayCompletions } from '@/hooks/useTodayCompletions';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
@@ -35,10 +36,12 @@ export function GoalCard({ goal, showStats = false }: GoalCardProps) {
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const { removeGoal, completeGoal } = useGoals();
+  const { todayCompletedGoalIds } = useTodayCompletions();
   const { toast } = useToast();
 
   const goalWithStats = goal as GoalWithStats;
   const hasStats = 'completionCount' in goal;
+  const isReportedToday = todayCompletedGoalIds.has(goal.id);
 
   const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -221,24 +224,31 @@ export function GoalCard({ goal, showStats = false }: GoalCardProps) {
           </div>
         )}
 
-        <div className="flex gap-2 mt-4">
-          <Button
-            onClick={() => openModal('completed')}
-            className="flex-1 rounded-xl"
-            variant="default"
-          >
-            <Check size={16} className="mr-1.5" />
-            Done
-          </Button>
-          <Button
-            onClick={() => openModal('missed')}
-            className="flex-1 rounded-xl"
-            variant="secondary"
-          >
-            <X size={16} className="mr-1.5" />
-            Not Today
-          </Button>
-        </div>
+        {isReportedToday ? (
+          <div className="mt-4 p-3 bg-muted/50 rounded-xl flex items-center gap-2 text-muted-foreground">
+            <Clock size={16} />
+            <span className="text-sm">Report progress on this goal again tomorrow</span>
+          </div>
+        ) : (
+          <div className="flex gap-2 mt-4">
+            <Button
+              onClick={() => openModal('completed')}
+              className="flex-1 rounded-xl"
+              variant="default"
+            >
+              <Check size={16} className="mr-1.5" />
+              Done
+            </Button>
+            <Button
+              onClick={() => openModal('missed')}
+              className="flex-1 rounded-xl"
+              variant="secondary"
+            >
+              <X size={16} className="mr-1.5" />
+              Not Today
+            </Button>
+          </div>
+        )}
       </motion.div>
 
       <input
