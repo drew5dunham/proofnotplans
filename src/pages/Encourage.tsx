@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ChatDialog } from '@/components/ChatDialog';
 import { ReportGoalDialog } from '@/components/ReportGoalDialog';
 import { UserAvatar } from '@/components/UserAvatar';
+import { AddFriendsPrompt } from '@/components/AddFriendsPrompt';
 import { useAuth } from '@/hooks/useAuth';
 import { useGoals } from '@/hooks/useGoals';
 import { useHasPostedToday } from '@/hooks/useHasPostedToday';
@@ -165,6 +166,8 @@ export default function Encourage() {
       <Header title="Encourage" />
       
       <main className="max-w-md mx-auto px-4">
+        <AddFriendsPrompt />
+        
         <Tabs defaultValue="send" className="w-full">
           <TabsList className="w-full mb-4">
             <TabsTrigger value="send" className="flex-1 gap-1.5">
