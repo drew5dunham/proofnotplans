@@ -13,6 +13,7 @@ import Encourage from "./pages/Encourage";
 import Auth from "./pages/Auth";
 import GroupFeed from "./pages/GroupFeed";
 import NotFound from "./pages/NotFound";
+import { PushNotificationPrompt } from "./components/PushNotificationPrompt";
 import { Loader2 } from "lucide-react";
 
 const queryClient = new QueryClient();
@@ -59,6 +60,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <AppRoutes />
+          <PushNotificationPrompt />
         </BrowserRouter>
       </TooltipProvider>
     </AuthProvider>
