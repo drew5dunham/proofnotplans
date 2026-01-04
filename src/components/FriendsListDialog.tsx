@@ -44,6 +44,8 @@ export function FriendsListDialog({ userId, userName }: FriendsListDialogProps) 
     try {
       await sendRequest.mutateAsync({ friendId, friendName });
       toast.success(`Friend request sent to ${friendName || 'user'}!`);
+      setSearchTerm('');
+      setShowAddFriend(false);
       setOpen(false);
     } catch (error) {
       toast.error('Failed to send friend request');
