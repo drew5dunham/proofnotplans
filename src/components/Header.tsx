@@ -7,7 +7,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { useConversations, useUnreadConversationCount } from '@/hooks/useConversations';
-import { useNotifications, useUnreadNotificationCount, useMarkNotificationRead } from '@/hooks/useComments';
+import { useNotifications, useUnreadNotificationCount, useMarkNotificationRead, useDeleteNotification } from '@/hooks/useComments';
 import { useAcceptFriendRequest, useIgnoreFriendRequest } from '@/hooks/useFriendRequests';
 import { formatDistanceToNow } from 'date-fns';
 import { useState } from 'react';
@@ -26,6 +26,7 @@ export function Header({ title, rightAction }: HeaderProps) {
   const { data: notifications, isLoading: loadingNotifications } = useNotifications();
   const { data: unreadNotificationCount } = useUnreadNotificationCount();
   const markNotificationRead = useMarkNotificationRead();
+  const deleteNotification = useDeleteNotification();
   const acceptFriendRequest = useAcceptFriendRequest();
   const ignoreFriendRequest = useIgnoreFriendRequest();
 
@@ -73,13 +74,17 @@ export function Header({ title, rightAction }: HeaderProps) {
     }
   };
 
+  const handleDeleteNotification = async (e: React.MouseEvent, notifId: string) => {
+    e.stopPropagation();
+    try {
+      await deleteNotification.mutateAsync(notifId);
+    } catch (error) {
+      toast.error('Failed to delete notification');
+    }
+  };
+
   const totalUnread = (unreadConversationCount || 0) + (unreadNotificationCount || 0);
   const isLoading = loadingConversations || loadingNotifications;
-
-  // Sample notifications for demo
-  const sampleNotifications = [
-    { id: 'sample-1', text: '🔥 Sarah M. is on a 7-day streak!', time: '2 hours ago' },
-  ];
 
   return (
     <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-xl border-b border-border/50">
@@ -140,16 +145,6 @@ export function Header({ title, rightAction }: HeaderProps) {
                         });
                       }
 
-                      // Add sample notifications (with a fake old date)
-                      sampleNotifications.forEach((notif) => {
-                        allItems.push({
-                          id: notif.id,
-                          type: 'sample',
-                          created_at: new Date(Date.now() - 7200000).toISOString(), // 2 hours ago
-                          data: notif
-                        });
-                      });
-
                       // Sort by created_at descending (most recent first)
                       allItems.sort((a, b) => 
                         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
@@ -158,7 +153,7 @@ export function Header({ title, rightAction }: HeaderProps) {
                       if (allItems.length === 0) {
                         return (
                           <p className="text-sm text-muted-foreground text-center py-4">
-                            No notifications yet
+                            No notifications
                           </p>
                         );
                       }
@@ -174,13 +169,22 @@ export function Header({ title, rightAction }: HeaderProps) {
                             <div 
                               key={notif.id} 
                               onClick={() => handleNotificationClick(notif)}
-                              className={`p-3 rounded-xl transition-colors ${
+                              className={`relative p-3 rounded-xl transition-colors ${
                                 isClickable ? 'cursor-pointer hover:bg-muted' : ''
                               } ${!notif.read_at ? 'bg-primary/10' : ''}`}
                             >
-                              <p className="font-medium text-sm">{notif.title}</p>
+                              {/* Delete button */}
+                              <button
+                                onClick={(e) => handleDeleteNotification(e, notif.id)}
+                                className="absolute top-2 right-2 p-1 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                                disabled={deleteNotification.isPending}
+                              >
+                                <X size={14} />
+                              </button>
+                              
+                              <p className="font-medium text-sm pr-6">{notif.title}</p>
                               {notif.body && !isFriendRequest && (
-                                <p className="text-muted-foreground text-sm mt-0.5 truncate">"{notif.body}"</p>
+                                <p className="text-muted-foreground text-sm mt-0.5 truncate pr-6">"{notif.body}"</p>
                               )}
                               
                               {/* Friend request action buttons */}
@@ -240,14 +244,7 @@ export function Header({ title, rightAction }: HeaderProps) {
                           );
                         }
 
-                        // Sample notification
-                        const notif = item.data;
-                        return (
-                          <div key={notif.id} className="p-3 rounded-xl hover:bg-muted">
-                            <p className="font-medium text-sm">{notif.text}</p>
-                            <p className="text-xs text-muted-foreground mt-1">{notif.time}</p>
-                          </div>
-                        );
+                        return null;
                       });
                     })()}
                   </div>
