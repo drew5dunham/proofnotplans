@@ -217,18 +217,23 @@ export function Header({ title, rightAction }: HeaderProps) {
 
                         if (item.type === 'encouragement') {
                           const enc = item.data;
+                          const senderName = enc.sender?.name || 'Someone';
                           return (
                             <div 
                               key={enc.id} 
                               onClick={() => {
                                 setPopoverOpen(false);
-                                navigate('/encourage?tab=received');
+                                const params = new URLSearchParams({ name: senderName });
+                                if (enc.emoji) params.set('emoji', enc.emoji);
+                                if (enc.message) params.set('message', enc.message);
+                                if (enc.created_at) params.set('timestamp', enc.created_at);
+                                navigate(`/chat/${enc.sender_id}?${params.toString()}`);
                               }}
                               className={`p-3 rounded-xl cursor-pointer transition-colors ${!enc.read_at ? 'bg-primary/10' : 'hover:bg-muted'}`}
                             >
                               <p className="font-medium text-sm">
                                 {enc.emoji && <span className="mr-1">{enc.emoji}</span>}
-                                {enc.sender?.name || 'Someone'} sent you encouragement!
+                                {senderName} sent you encouragement!
                               </p>
                               {enc.message && (
                                 <p className="text-muted-foreground text-sm mt-0.5">"{enc.message}"</p>
