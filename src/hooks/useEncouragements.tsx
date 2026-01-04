@@ -177,30 +177,34 @@ export function useReceivedEncouragements() {
     queryFn: async () => {
       if (!user) return [];
 
-      const { data, error } = await supabase
+      // Fetch encouragements
+      const { data: encouragements, error } = await supabase
         .from('encouragements')
-        .select(`
-          *,
-          sender:profiles!encouragements_sender_id_fkey(id, name)
-        `)
+        .select('*')
         .eq('recipient_id', user.id)
         .order('created_at', { ascending: false })
         .limit(50);
 
-      if (error) {
-        // Fallback without join if foreign key doesn't exist
-        const { data: fallbackData, error: fallbackError } = await supabase
-          .from('encouragements')
-          .select('*')
-          .eq('recipient_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(50);
+      if (error) throw error;
+      if (!encouragements || encouragements.length === 0) return [];
 
-        if (fallbackError) throw fallbackError;
-        return fallbackData || [];
-      }
+      // Get unique sender IDs
+      const senderIds = [...new Set(encouragements.map(e => e.sender_id))];
 
-      return data || [];
+      // Fetch sender profiles
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, name')
+        .in('id', senderIds);
+
+      // Create a map for quick lookup
+      const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+
+      // Attach sender info to encouragements
+      return encouragements.map(enc => ({
+        ...enc,
+        sender: profileMap.get(enc.sender_id) || null
+      }));
     },
     enabled: !!user
   });
