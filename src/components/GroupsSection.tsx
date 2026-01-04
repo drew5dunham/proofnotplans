@@ -8,6 +8,14 @@ import { CategoryIcon, getCategoryLabel } from '@/components/CategoryIcon';
 import { CreateGroupDialog } from '@/components/CreateGroupDialog';
 import { InviteToGroupDialog } from '@/components/InviteToGroupDialog';
 import { Button } from '@/components/ui/button';
+import { UserAvatar } from '@/components/UserAvatar';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,6 +35,7 @@ export function GroupsSection() {
   const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
   const [confirmLeave, setConfirmLeave] = useState<GroupWithMembers | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<GroupWithMembers | null>(null);
+  const [viewMembersGroup, setViewMembersGroup] = useState<GroupWithMembers | null>(null);
 
   const handleGroupClick = (groupId: string) => {
     navigate(`/group/${groupId}`);
@@ -79,9 +88,15 @@ export function GroupsSection() {
                       <CategoryIcon category={group.category as Category} size={12} />
                       <span>{getCategoryLabel(group.category as Category)}</span>
                     </div>
-                    <span className="text-xs text-muted-foreground">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setViewMembersGroup(group);
+                      }}
+                      className="text-xs text-muted-foreground hover:text-foreground hover:underline transition-colors"
+                    >
                       {group.member_count} member{group.member_count !== 1 ? 's' : ''}
-                    </span>
+                    </button>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -197,6 +212,41 @@ export function GroupsSection() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* View members dialog */}
+      <Dialog open={!!viewMembersGroup} onOpenChange={() => setViewMembersGroup(null)}>
+        <DialogContent className="max-w-[360px] rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Users size={18} />
+              {viewMembersGroup?.name} Members
+            </DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="max-h-[300px]">
+            <div className="space-y-2">
+              {viewMembersGroup?.members.map((member) => (
+                <div
+                  key={member.user_id}
+                  className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50"
+                >
+                  <UserAvatar
+                    name={member.name || undefined}
+                    size="sm"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">
+                      {member.name || 'Unknown'}
+                    </p>
+                    {member.user_id === viewMembersGroup?.created_by && (
+                      <p className="text-xs text-muted-foreground">Creator</p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
