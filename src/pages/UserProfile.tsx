@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Flame, Target, Check, ArrowLeft, Loader2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Flame, Target, Check, ArrowLeft, Loader2, X } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { BottomNav } from '@/components/BottomNav';
@@ -15,6 +16,7 @@ export default function UserProfile() {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [avatarFullscreen, setAvatarFullscreen] = useState(false);
 
   const isSample = userId ? isSampleUser(userId) : false;
   const sampleData = userId ? getSampleUserData(userId) : null;
@@ -153,11 +155,16 @@ export default function UserProfile() {
         {/* User info */}
         <div className="p-4 border-b border-border">
           <div className="flex items-center gap-4 mb-4">
-            <UserAvatar 
-              name={userName} 
-              avatarUrl={actualProfile?.avatar_url} 
-              size="lg" 
-            />
+            <button
+              onClick={() => actualProfile?.avatar_url && setAvatarFullscreen(true)}
+              className={actualProfile?.avatar_url ? 'cursor-pointer' : 'cursor-default'}
+            >
+              <UserAvatar 
+                name={userName} 
+                avatarUrl={actualProfile?.avatar_url} 
+                size="lg" 
+              />
+            </button>
             <div>
               <h2 className="text-xl font-bold">{userName}</h2>
             </div>
@@ -242,6 +249,39 @@ export default function UserProfile() {
       </main>
 
       <BottomNav />
+
+      {/* Fullscreen avatar modal */}
+      <AnimatePresence>
+        {avatarFullscreen && actualProfile?.avatar_url && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center"
+            onClick={() => setAvatarFullscreen(false)}
+          >
+            <button
+              onClick={() => setAvatarFullscreen(false)}
+              className="absolute top-4 right-4 p-2 text-white/80 hover:text-white z-10"
+            >
+              <X size={24} />
+            </button>
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              className="w-72 h-72 rounded-full overflow-hidden border-4 border-white/20"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <img
+                src={actualProfile.avatar_url}
+                alt={`${userName}'s profile`}
+                className="w-full h-full object-cover"
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
