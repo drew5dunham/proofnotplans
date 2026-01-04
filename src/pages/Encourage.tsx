@@ -188,34 +188,32 @@ export default function Encourage() {
             
             {/* Gate: Must post today to send encouragements */}
             {!hasPostedToday && !loadingPosted ? (
-              <div className="py-8 text-center">
-                <div className="mb-4 p-4 bg-primary/10 rounded-2xl">
-                  <div className="flex items-start gap-3">
-                    <div className="p-2 bg-primary/20 text-primary rounded-xl">
-                      <Target size={20} />
-                    </div>
-                    <div className="flex-1 text-left">
-                      <p className="font-semibold text-foreground text-sm">
-                        Post first to encourage friends
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        Report on a goal today to unlock the ability to send encouragements.
-                      </p>
-                      {goals && goals.length > 0 ? (
-                        <ReportGoalDialog 
-                          trigger={
-                            <Button size="sm" className="mt-3 rounded-full">
-                              <Plus size={16} className="mr-1.5" />
-                              Report Now
-                            </Button>
-                          }
-                        />
-                      ) : (
-                        <Button asChild size="sm" className="mt-3 rounded-full">
-                          <Link to="/goals?add=true">Add Goals First</Link>
-                        </Button>
-                      )}
-                    </div>
+              <div className="mb-4 p-4 bg-primary/10 rounded-2xl">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-primary/20 text-primary rounded-xl">
+                    <Target size={20} />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-semibold text-foreground text-sm">
+                      Post first to encourage friends
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Report on a goal today to unlock the ability to send encouragements.
+                    </p>
+                    {goals && goals.length > 0 ? (
+                      <ReportGoalDialog 
+                        trigger={
+                          <Button size="sm" className="mt-3 rounded-full">
+                            <Plus size={16} className="mr-1.5" />
+                            Report Now
+                          </Button>
+                        }
+                      />
+                    ) : (
+                      <Button asChild size="sm" className="mt-3 rounded-full">
+                        <Link to="/goals?add=true">Add Goals First</Link>
+                      </Button>
+                    )}
                   </div>
                 </div>
               </div>
