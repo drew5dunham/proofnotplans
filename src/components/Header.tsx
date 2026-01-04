@@ -107,95 +107,149 @@ export function Header({ title, rightAction }: HeaderProps) {
                   </div>
                 ) : (
                   <div className="p-3 space-y-2">
-                    {/* Real notifications */}
-                    {notifications && notifications.map((notif: any) => {
-                      const isFriendRequest = notif.type === 'friend_request' && !notif.read_at;
-                      const isClickable = !isFriendRequest && notif.reference_id && 
-                        (notif.type === 'comment' || notif.type === 'like' || notif.type === 'group_invite');
-                      
-                      return (
-                        <div 
-                          key={notif.id} 
-                          onClick={() => handleNotificationClick(notif)}
-                          className={`p-3 rounded-xl transition-colors ${
-                            isClickable ? 'cursor-pointer hover:bg-muted' : ''
-                          } ${!notif.read_at ? 'bg-primary/10' : ''}`}
-                        >
-                          <p className="font-medium text-sm">{notif.title}</p>
-                          {notif.body && !isFriendRequest && (
-                            <p className="text-muted-foreground text-sm mt-0.5 truncate">"{notif.body}"</p>
-                          )}
-                          
-                          {/* Friend request action buttons */}
-                          {isFriendRequest && (
-                            <div className="flex gap-2 mt-2">
-                              <Button
-                                size="sm"
-                                className="flex-1 gap-1"
-                                onClick={(e) => { e.stopPropagation(); handleAcceptFriend(notif); }}
-                                disabled={acceptFriendRequest.isPending || ignoreFriendRequest.isPending}
-                              >
-                                <Check size={14} />
-                                Accept
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="flex-1 gap-1"
-                                onClick={(e) => { e.stopPropagation(); handleIgnoreFriend(notif); }}
-                                disabled={acceptFriendRequest.isPending || ignoreFriendRequest.isPending}
-                              >
-                                <X size={14} />
-                                Ignore
-                              </Button>
-                            </div>
-                          )}
-                          
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {formatDistanceToNow(new Date(notif.created_at), { addSuffix: true })}
-                          </p>
-                        </div>
+                    {(() => {
+                      // Combine all items with a unified structure for sorting
+                      const allItems: Array<{
+                        id: string;
+                        type: 'notification' | 'encouragement' | 'sample';
+                        created_at: string;
+                        data: any;
+                      }> = [];
+
+                      // Add notifications
+                      if (notifications) {
+                        notifications.forEach((notif: any) => {
+                          allItems.push({
+                            id: notif.id,
+                            type: 'notification',
+                            created_at: notif.created_at,
+                            data: notif
+                          });
+                        });
+                      }
+
+                      // Add encouragements
+                      if (encouragements) {
+                        encouragements.forEach((enc: any) => {
+                          allItems.push({
+                            id: enc.id,
+                            type: 'encouragement',
+                            created_at: enc.created_at,
+                            data: enc
+                          });
+                        });
+                      }
+
+                      // Add sample notifications (with a fake old date)
+                      sampleNotifications.forEach((notif) => {
+                        allItems.push({
+                          id: notif.id,
+                          type: 'sample',
+                          created_at: new Date(Date.now() - 7200000).toISOString(), // 2 hours ago
+                          data: notif
+                        });
+                      });
+
+                      // Sort by created_at descending (most recent first)
+                      allItems.sort((a, b) => 
+                        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
                       );
-                    })}
 
-                    {/* Real encouragements */}
-                    {encouragements && encouragements.map((enc: any) => (
-                      <div 
-                        key={enc.id} 
-                        onClick={() => {
-                          setPopoverOpen(false);
-                          navigate('/encourage?tab=received');
-                        }}
-                        className={`p-3 rounded-xl cursor-pointer transition-colors ${!enc.read_at ? 'bg-primary/10' : 'hover:bg-muted'}`}
-                      >
-                        <p className="font-medium text-sm">
-                          {enc.emoji && <span className="mr-1">{enc.emoji}</span>}
-                          {enc.sender?.name || 'Someone'} sent you encouragement!
-                        </p>
-                        {enc.message && (
-                          <p className="text-muted-foreground text-sm mt-0.5">"{enc.message}"</p>
-                        )}
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {formatDistanceToNow(new Date(enc.created_at), { addSuffix: true })}
-                        </p>
-                      </div>
-                    ))}
-                    
-                    {/* Sample notifications */}
-                    {sampleNotifications.map((notif) => (
-                      <div key={notif.id} className="p-3 rounded-xl hover:bg-muted">
-                        <p className="font-medium text-sm">{notif.text}</p>
-                        <p className="text-xs text-muted-foreground mt-1">{notif.time}</p>
-                      </div>
-                    ))}
+                      if (allItems.length === 0) {
+                        return (
+                          <p className="text-sm text-muted-foreground text-center py-4">
+                            No notifications yet
+                          </p>
+                        );
+                      }
 
-                    {(!notifications || notifications.length === 0) && 
-                     (!encouragements || encouragements.length === 0) && 
-                     sampleNotifications.length === 0 && (
-                      <p className="text-sm text-muted-foreground text-center py-4">
-                        No notifications yet
-                      </p>
-                    )}
+                      return allItems.map((item) => {
+                        if (item.type === 'notification') {
+                          const notif = item.data;
+                          const isFriendRequest = notif.type === 'friend_request' && !notif.read_at;
+                          const isClickable = !isFriendRequest && notif.reference_id && 
+                            (notif.type === 'comment' || notif.type === 'like' || notif.type === 'group_invite');
+                          
+                          return (
+                            <div 
+                              key={notif.id} 
+                              onClick={() => handleNotificationClick(notif)}
+                              className={`p-3 rounded-xl transition-colors ${
+                                isClickable ? 'cursor-pointer hover:bg-muted' : ''
+                              } ${!notif.read_at ? 'bg-primary/10' : ''}`}
+                            >
+                              <p className="font-medium text-sm">{notif.title}</p>
+                              {notif.body && !isFriendRequest && (
+                                <p className="text-muted-foreground text-sm mt-0.5 truncate">"{notif.body}"</p>
+                              )}
+                              
+                              {/* Friend request action buttons */}
+                              {isFriendRequest && (
+                                <div className="flex gap-2 mt-2">
+                                  <Button
+                                    size="sm"
+                                    className="flex-1 gap-1"
+                                    onClick={(e) => { e.stopPropagation(); handleAcceptFriend(notif); }}
+                                    disabled={acceptFriendRequest.isPending || ignoreFriendRequest.isPending}
+                                  >
+                                    <Check size={14} />
+                                    Accept
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="flex-1 gap-1"
+                                    onClick={(e) => { e.stopPropagation(); handleIgnoreFriend(notif); }}
+                                    disabled={acceptFriendRequest.isPending || ignoreFriendRequest.isPending}
+                                  >
+                                    <X size={14} />
+                                    Ignore
+                                  </Button>
+                                </div>
+                              )}
+                              
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {formatDistanceToNow(new Date(notif.created_at), { addSuffix: true })}
+                              </p>
+                            </div>
+                          );
+                        }
+
+                        if (item.type === 'encouragement') {
+                          const enc = item.data;
+                          return (
+                            <div 
+                              key={enc.id} 
+                              onClick={() => {
+                                setPopoverOpen(false);
+                                navigate('/encourage?tab=received');
+                              }}
+                              className={`p-3 rounded-xl cursor-pointer transition-colors ${!enc.read_at ? 'bg-primary/10' : 'hover:bg-muted'}`}
+                            >
+                              <p className="font-medium text-sm">
+                                {enc.emoji && <span className="mr-1">{enc.emoji}</span>}
+                                {enc.sender?.name || 'Someone'} sent you encouragement!
+                              </p>
+                              {enc.message && (
+                                <p className="text-muted-foreground text-sm mt-0.5">"{enc.message}"</p>
+                              )}
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {formatDistanceToNow(new Date(enc.created_at), { addSuffix: true })}
+                              </p>
+                            </div>
+                          );
+                        }
+
+                        // Sample notification
+                        const notif = item.data;
+                        return (
+                          <div key={notif.id} className="p-3 rounded-xl hover:bg-muted">
+                            <p className="font-medium text-sm">{notif.text}</p>
+                            <p className="text-xs text-muted-foreground mt-1">{notif.time}</p>
+                          </div>
+                        );
+                      });
+                    })()}
                   </div>
                 )}
               </div>
