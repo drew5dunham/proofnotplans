@@ -6,6 +6,7 @@ import { Paywall } from '@/components/Paywall';
 import { UserAvatar } from '@/components/UserAvatar';
 import { useLeaderboard } from '@/hooks/useLeaderboard';
 import { Skeleton } from '@/components/ui/skeleton';
+import { AddFriendsPrompt } from '@/components/AddFriendsPrompt';
 
 interface LeaderboardItem {
   userId: string;
@@ -100,7 +101,9 @@ export default function Leaderboard() {
     <div className="min-h-screen bg-background pb-24">
       <Header title="This Week" />
 
-      <main className="max-w-md mx-auto py-4">
+      <main className="max-w-md mx-auto py-4 px-4">
+        <AddFriendsPrompt />
+
         <LeaderboardSection
           title="Most Consistent"
           icon={TrendingUp}
