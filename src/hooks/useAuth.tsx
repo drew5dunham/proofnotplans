@@ -63,6 +63,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
+    // Clear session-based dismissals so prompts reappear on next login
+    sessionStorage.removeItem('friendsPromptDismissed');
     await supabase.auth.signOut();
   };
 
