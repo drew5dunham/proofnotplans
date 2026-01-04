@@ -172,8 +172,8 @@ export function useAddComment() {
           actor_id: user.id
         });
 
-        // Send push notification
-        sendPushNotification(data.post_author_id, title, body, '/');
+        // Send push notification with post ID in URL
+        sendPushNotification(data.post_author_id, title, body, `/?post=${data.completion_id}`);
       }
     },
     onSuccess: (_, variables) => {
