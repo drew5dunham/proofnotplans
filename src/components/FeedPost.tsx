@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Heart, MessageCircle, Check, X, ThumbsUp, Flame, Trash2, Lock } from 'lucide-react';
 import { CategoryIcon, getCategoryLabel } from './CategoryIcon';
 import { CommentsDrawer } from './CommentsDrawer';
+import { UserAvatar } from './UserAvatar';
 import { useCommentCount } from '@/hooks/useComments';
 import { useHasPostedToday } from '@/hooks/useHasPostedToday';
 import { formatDistanceToNow } from 'date-fns';
@@ -90,7 +91,7 @@ export function FeedPost({ post, index, autoOpenComments = false, currentUserId,
   const goalName = post.goals?.name || 'Goal';
   const category = (post.goals?.category || 'personal') as Category;
   const userName = post.profiles?.name || 'Anonymous';
-  const userInitial = userName.charAt(0).toUpperCase();
+  const userAvatarUrl = post.profiles?.avatar_url;
 
   return (
     <motion.article
@@ -106,9 +107,7 @@ export function FeedPost({ post, index, autoOpenComments = false, currentUserId,
           onClick={handleProfileClick}
           className="flex items-center gap-3 text-left hover:opacity-80 transition-opacity"
         >
-          <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center text-sm font-semibold text-white">
-            {userInitial}
-          </div>
+          <UserAvatar name={userName} avatarUrl={userAvatarUrl} size="md" />
           <div>
             <p className="text-sm font-semibold leading-tight hover:underline">{userName}</p>
             <p className="timestamp">

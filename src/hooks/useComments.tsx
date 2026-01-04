@@ -13,6 +13,7 @@ export interface Comment {
   profiles?: {
     id: string;
     name: string | null;
+    avatar_url?: string | null;
   };
 }
 
@@ -43,7 +44,7 @@ export function useComments(completionId: string | null) {
       const userIds = [...new Set(comments.map(c => c.user_id))];
       const { data: profiles } = await supabase
         .from('profiles')
-        .select('id, name')
+        .select('id, name, avatar_url')
         .in('id', userIds);
 
       const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
@@ -75,7 +76,7 @@ export function useComments(completionId: string | null) {
           const newComment = payload.new as any;
           const { data: profile } = await supabase
             .from('profiles')
-            .select('id, name')
+            .select('id, name, avatar_url')
             .eq('id', newComment.user_id)
             .maybeSingle();
 

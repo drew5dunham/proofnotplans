@@ -4,6 +4,7 @@ import { Users, Loader2, UserPlus, Search, Check } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { UserAvatar } from '@/components/UserAvatar';
 import { useFriends, useFriendCount } from '@/hooks/useFriends';
 import { useSearchUsers, useSendFriendRequest } from '@/hooks/useFriendRequests';
 import { motion } from 'framer-motion';
@@ -106,9 +107,7 @@ export function FriendsListDialog({ userId, userName }: FriendsListDialogProps) 
                       transition={{ delay: index * 0.05 }}
                       className="flex items-center gap-3 p-3 rounded-xl bg-card"
                     >
-                      <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center text-sm font-semibold text-white flex-shrink-0">
-                        {(user.name || 'U').charAt(0).toUpperCase()}
-                      </div>
+                      <UserAvatar name={user.name} size="md" />
                       <div className="flex-1 min-w-0">
                         <p className="font-medium truncate">{user.name || 'Anonymous'}</p>
                       </div>
@@ -163,9 +162,7 @@ export function FriendsListDialog({ userId, userName }: FriendsListDialogProps) 
                   onClick={() => handleFriendClick(friend.id)}
                   className="w-full flex items-center gap-3 p-3 rounded-xl bg-card hover:bg-muted transition-colors text-left"
                 >
-                  <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center text-sm font-semibold text-white flex-shrink-0">
-                    {(friend.name || 'U').charAt(0).toUpperCase()}
-                  </div>
+                  <UserAvatar name={friend.name} avatarUrl={friend.avatar_url} size="md" />
                   <div className="flex-1 min-w-0">
                     <p className="font-medium truncate">{friend.name || 'Anonymous'}</p>
                   </div>

@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { BottomNav } from '@/components/BottomNav';
 import { GoalProgressSection } from '@/components/GoalProgressSection';
 import { FriendsListDialog } from '@/components/FriendsListDialog';
+import { UserAvatar } from '@/components/UserAvatar';
 import { isSampleUser, getSampleUserData } from '@/lib/sampleData';
 import type { GoalWithStats, DbCompletion } from '@/hooks/useGoals';
 
@@ -22,7 +23,7 @@ export default function UserProfile() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, name')
+        .select('id, name, avatar_url')
         .eq('id', userId!)
         .maybeSingle();
       
@@ -66,7 +67,7 @@ export default function UserProfile() {
   });
 
   // Use sample data or real data
-  const actualProfile = isSample ? { id: userId, name: sampleData?.name } : profile;
+  const actualProfile = isSample ? { id: userId, name: sampleData?.name, avatar_url: null } : profile;
   const actualGoals = isSample ? sampleData?.goals : goals;
   const actualCompletions = isSample ? sampleData?.completions : completions;
 
@@ -149,9 +150,11 @@ export default function UserProfile() {
         {/* User info */}
         <div className="p-4 border-b border-border">
           <div className="flex items-center gap-4 mb-4">
-            <div className="w-16 h-16 bg-primary text-primary-foreground flex items-center justify-center text-2xl font-bold">
-              {userName.charAt(0).toUpperCase()}
-            </div>
+            <UserAvatar 
+              name={userName} 
+              avatarUrl={actualProfile?.avatar_url} 
+              size="lg" 
+            />
             <div>
               <h2 className="text-xl font-bold">{userName}</h2>
             </div>

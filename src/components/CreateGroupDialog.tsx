@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { CategoryIcon, getCategoryLabel, CATEGORIES } from '@/components/CategoryIcon';
+import { UserAvatar } from '@/components/UserAvatar';
 import { useGroups } from '@/hooks/useGroups';
 import { useFriends } from '@/hooks/useFriends';
 import {
@@ -159,9 +160,7 @@ export function CreateGroupDialog({ trigger }: CreateGroupDialogProps) {
                         }`}
                       >
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center text-xs font-semibold text-white">
-                            {(friend.name || 'U').charAt(0).toUpperCase()}
-                          </div>
+                          <UserAvatar name={friend.name} avatarUrl={friend.avatar_url} size="sm" />
                           <span className="text-sm font-medium">{friend.name || 'Anonymous'}</span>
                         </div>
                         <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
