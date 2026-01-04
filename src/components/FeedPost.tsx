@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Heart, MessageCircle, Check, X, ThumbsUp, Flame, Trash2, Lock } from 'lucide-react';
 import { CategoryIcon, getCategoryLabel } from './CategoryIcon';
 import { CommentsDrawer } from './CommentsDrawer';
@@ -36,6 +36,7 @@ export function FeedPost({ post, index, autoOpenComments = false, currentUserId,
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
   const [commentsOpen, setCommentsOpen] = useState(false);
+  const [imageFullscreen, setImageFullscreen] = useState(false);
   const postRef = useRef<HTMLElement>(null);
   const navigate = useNavigate();
   const { data: commentCount } = useCommentCount(post.id);
@@ -198,13 +199,46 @@ export function FeedPost({ post, index, autoOpenComments = false, currentUserId,
 
       {/* Photo if exists */}
       {post.media_type === 'photo' && post.media_url && (
-        <div className="mb-4 -mx-4">
-          <img
-            src={post.media_url}
-            alt={`Proof for ${goalName}`}
-            className="w-full h-48 object-cover"
-          />
-        </div>
+        <>
+          <button 
+            onClick={() => setImageFullscreen(true)}
+            className="mb-4 -mx-4 block w-[calc(100%+2rem)] cursor-pointer"
+          >
+            <img
+              src={post.media_url}
+              alt={`Proof for ${goalName}`}
+              className="w-full object-contain max-h-[400px]"
+            />
+          </button>
+
+          {/* Fullscreen image modal */}
+          <AnimatePresence>
+            {imageFullscreen && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-50 bg-black flex items-center justify-center"
+                onClick={() => setImageFullscreen(false)}
+              >
+                <button
+                  onClick={() => setImageFullscreen(false)}
+                  className="absolute top-4 right-4 p-2 text-white/80 hover:text-white z-10"
+                >
+                  <X size={28} />
+                </button>
+                <motion.img
+                  initial={{ scale: 0.9 }}
+                  animate={{ scale: 1 }}
+                  exit={{ scale: 0.9 }}
+                  src={post.media_url}
+                  alt={`Proof for ${goalName}`}
+                  className="max-w-full max-h-full object-contain"
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </>
       )}
 
       {/* Caption if exists */}
