@@ -16,6 +16,7 @@ interface FriendsListDialogProps {
 
 export function FriendsListDialog({ userId, userName }: FriendsListDialogProps) {
   const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
   const [showAddFriend, setShowAddFriend] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [sentRequests, setSentRequests] = useState<Set<string>>(new Set());
@@ -32,8 +33,8 @@ export function FriendsListDialog({ userId, userName }: FriendsListDialogProps) 
   const handleSendRequest = async (friendId: string, friendName: string | null) => {
     try {
       await sendRequest.mutateAsync({ friendId, friendName });
-      setSentRequests(prev => new Set(prev).add(friendId));
       toast.success(`Friend request sent to ${friendName || 'user'}!`);
+      setOpen(false);
     } catch (error) {
       toast.error('Failed to send friend request');
     }
@@ -42,7 +43,10 @@ export function FriendsListDialog({ userId, userName }: FriendsListDialogProps) 
   const isOwnProfile = !userId;
 
   return (
-    <Dialog onOpenChange={(open) => { if (!open) { setShowAddFriend(false); setSearchTerm(''); } }}>
+    <Dialog open={open} onOpenChange={(isOpen) => { 
+      setOpen(isOpen); 
+      if (!isOpen) { setShowAddFriend(false); setSearchTerm(''); setSentRequests(new Set()); } 
+    }}>
       <DialogTrigger asChild>
         <button className="stat-block w-full h-full cursor-pointer hover:bg-muted/50 transition-colors">
           <div className="flex items-center gap-1 text-blue-400 mb-1">
