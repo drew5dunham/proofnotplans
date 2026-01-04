@@ -120,7 +120,7 @@ export default function Chat() {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-background flex flex-col">
+    <div className="fixed inset-0 z-50 bg-background flex flex-col max-w-md mx-auto">
       {/* iMessage-style Header */}
       <header className="bg-card/80 backdrop-blur-lg border-b border-border px-2 py-2 flex items-center gap-2 safe-area-top">
         <Button 
