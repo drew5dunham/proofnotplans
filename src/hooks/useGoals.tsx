@@ -101,6 +101,54 @@ export function useGoals() {
     enabled: !!user,
   });
 
+  // Fetch inactive (past) goals with stats
+  const inactiveGoalsWithStatsQuery = useQuery({
+    queryKey: ['inactive-goals-with-stats', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      
+      // Fetch inactive goals
+      const { data: goals, error: goalsError } = await supabase
+        .from('goals')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('is_active', false)
+        .order('created_at', { ascending: false });
+      
+      if (goalsError) throw goalsError;
+      
+      if (!goals || goals.length === 0) return [];
+      
+      // Fetch completions for these goals
+      const goalIds = goals.map(g => g.id);
+      const { data: completions, error: completionsError } = await supabase
+        .from('goal_completions')
+        .select('goal_id, completed_at')
+        .eq('user_id', user.id)
+        .in('goal_id', goalIds);
+      
+      if (completionsError) throw completionsError;
+      
+      // Calculate stats for each goal
+      const goalsWithStats: GoalWithStats[] = goals.map((goal) => {
+        const goalCompletions = (completions || []).filter(c => c.goal_id === goal.id);
+        const sortedCompletions = goalCompletions.sort(
+          (a, b) => new Date(b.completed_at).getTime() - new Date(a.completed_at).getTime()
+        );
+        
+        return {
+          ...goal,
+          visibility: (goal.visibility || 'public') as 'public' | 'private',
+          completionCount: goalCompletions.length,
+          lastCompleted: sortedCompletions[0]?.completed_at || null,
+        };
+      });
+      
+      return goalsWithStats;
+    },
+    enabled: !!user,
+  });
+
   const addGoalMutation = useMutation({
     mutationFn: async ({ name, category, visibility = 'public' }: { name: string; category: Category; visibility?: 'public' | 'private' }) => {
       if (!user) throw new Error('Not authenticated');
@@ -222,7 +270,9 @@ export function useGoals() {
   return {
     goals: goalsQuery.data || [],
     goalsWithStats: goalsWithStatsQuery.data || [],
+    inactiveGoalsWithStats: inactiveGoalsWithStatsQuery.data || [],
     isLoading: goalsQuery.isLoading || goalsWithStatsQuery.isLoading,
+    isLoadingInactive: inactiveGoalsWithStatsQuery.isLoading,
     addGoal: addGoalMutation.mutate,
     removeGoal: removeGoalMutation.mutate,
     completeGoal: completeGoalMutation.mutate,

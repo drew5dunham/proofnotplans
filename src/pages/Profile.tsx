@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Flame, Target, Check, LogOut, Loader2, Settings } from 'lucide-react';
+import { Flame, Target, Check, LogOut, Loader2, Settings, ChevronDown, Archive } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useGoals, useCompletions } from '@/hooks/useGoals';
 import { useProfile } from '@/hooks/useProfile';
@@ -10,12 +11,14 @@ import { GroupsSection } from '@/components/GroupsSection';
 import { FriendsListDialog } from '@/components/FriendsListDialog';
 import { AvatarUpload } from '@/components/AvatarUpload';
 import { Button } from '@/components/ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 export default function Profile() {
   const { user, signOut } = useAuth();
-  const { goalsWithStats, isLoading: goalsLoading } = useGoals();
+  const { goalsWithStats, inactiveGoalsWithStats, isLoading: goalsLoading, isLoadingInactive } = useGoals();
   const { data: completions, isLoading: completionsLoading } = useCompletions();
   const { profile, isLoading: profileLoading } = useProfile();
+  const [pastGoalsOpen, setPastGoalsOpen] = useState(false);
 
   const isLoading = goalsLoading || completionsLoading || profileLoading;
   const totalCompleted = completions?.length || 0;
@@ -171,6 +174,39 @@ export default function Profile() {
             </div>
           )}
         </div>
+
+        {/* Past Goals Section */}
+        {inactiveGoalsWithStats.length > 0 && (
+          <div className="px-4 pb-4">
+            <Collapsible open={pastGoalsOpen} onOpenChange={setPastGoalsOpen}>
+              <CollapsibleTrigger asChild>
+                <button className="w-full flex items-center justify-between p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
+                  <div className="flex items-center gap-2">
+                    <Archive size={16} className="text-muted-foreground" />
+                    <span className="text-sm font-medium">Past Goals</span>
+                    <span className="text-xs text-muted-foreground">({inactiveGoalsWithStats.length})</span>
+                  </div>
+                  <ChevronDown 
+                    size={16} 
+                    className={`text-muted-foreground transition-transform ${pastGoalsOpen ? 'rotate-180' : ''}`} 
+                  />
+                </button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="mt-3">
+                {isLoadingInactive ? (
+                  <div className="py-4 flex justify-center">
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  </div>
+                ) : (
+                  <GoalProgressSection 
+                    goals={inactiveGoalsWithStats} 
+                    completions={completions || []} 
+                  />
+                )}
+              </CollapsibleContent>
+            </Collapsible>
+          </div>
+        )}
       </main>
 
       <BottomNav />
