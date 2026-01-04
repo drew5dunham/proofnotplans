@@ -8,7 +8,6 @@ import { BottomNav } from '@/components/BottomNav';
 import { GoalProgressSection } from '@/components/GoalProgressSection';
 import { FriendsListDialog } from '@/components/FriendsListDialog';
 import { UserAvatar } from '@/components/UserAvatar';
-import { isSampleUser, getSampleUserData } from '@/lib/sampleData';
 import { useAuth } from '@/hooks/useAuth';
 import type { GoalWithStats, DbCompletion } from '@/hooks/useGoals';
 
@@ -17,12 +16,9 @@ export default function UserProfile() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [avatarFullscreen, setAvatarFullscreen] = useState(false);
-
-  const isSample = userId ? isSampleUser(userId) : false;
-  const sampleData = userId ? getSampleUserData(userId) : null;
   const isOwnProfile = !!userId && !!user?.id && user.id === userId;
 
-  // Fetch user profile (skip for sample users)
+  // Fetch user profile
   const { data: profile, isLoading: profileLoading } = useQuery({
     queryKey: ['profile', userId],
     queryFn: async () => {
@@ -35,10 +31,10 @@ export default function UserProfile() {
       if (error) throw error;
       return data;
     },
-    enabled: !!userId && !isSample,
+    enabled: !!userId,
   });
 
-  // Fetch user's goals (skip for sample users)
+  // Fetch user's goals
   const { data: goals, isLoading: goalsLoading } = useQuery({
     queryKey: ['user-goals', userId],
     queryFn: async () => {
@@ -52,10 +48,10 @@ export default function UserProfile() {
       if (error) throw error;
       return data;
     },
-    enabled: !!userId && !isSample,
+    enabled: !!userId,
   });
 
-  // Fetch user's completions (skip for sample users)
+  // Fetch user's completions
   const { data: completions, isLoading: completionsLoading } = useQuery({
     queryKey: ['user-completions', userId],
     queryFn: async () => {
@@ -68,25 +64,20 @@ export default function UserProfile() {
       if (error) throw error;
       return data as DbCompletion[];
     },
-    enabled: !!userId && !isSample,
+    enabled: !!userId,
   });
 
-  // Use sample data or real data
-  const actualProfile = isSample ? { id: userId, name: sampleData?.name, avatar_url: null } : profile;
-  const actualGoals = isSample ? sampleData?.goals : goals;
-  const actualCompletions = isSample ? sampleData?.completions : completions;
-
-  const isLoading = !isSample && (profileLoading || goalsLoading || completionsLoading);
-  const totalCompleted = actualCompletions?.filter(c => c.status === 'completed').length || 0;
+  const isLoading = profileLoading || goalsLoading || completionsLoading;
+  const totalCompleted = completions?.filter(c => c.status === 'completed').length || 0;
 
   // Calculate streak
   const calculateStreak = () => {
-    if (!actualCompletions || actualCompletions.length === 0) return 0;
+    if (!completions || completions.length === 0) return 0;
     
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
-    const completionDates = actualCompletions
+    const completionDates = completions
       .filter(c => c.status === 'completed')
       .map(c => {
         const date = new Date(c.completed_at);
@@ -113,23 +104,21 @@ export default function UserProfile() {
 
   const streak = calculateStreak();
 
-  // Build goals with stats (for real users only, sample users already have stats)
-  const goalsWithStats: GoalWithStats[] = isSample 
-    ? (sampleData?.goals || [])
-    : (actualGoals || []).map(goal => {
-        const goalCompletions = (actualCompletions || []).filter(c => c.goal_id === goal.id);
-        const completedCount = goalCompletions.filter(c => c.status === 'completed').length;
-        const lastCompleted = goalCompletions.find(c => c.status === 'completed')?.completed_at;
-        
-        return {
-          ...goal,
-          visibility: (goal.visibility || 'public') as 'public' | 'private',
-          completionCount: completedCount,
-          lastCompleted: lastCompleted || null,
-        };
-      });
+  // Build goals with stats
+  const goalsWithStats: GoalWithStats[] = (goals || []).map(goal => {
+    const goalCompletions = (completions || []).filter(c => c.goal_id === goal.id);
+    const completedCount = goalCompletions.filter(c => c.status === 'completed').length;
+    const lastCompleted = goalCompletions.find(c => c.status === 'completed')?.completed_at;
+    
+    return {
+      ...goal,
+      visibility: (goal.visibility || 'public') as 'public' | 'private',
+      completionCount: completedCount,
+      lastCompleted: lastCompleted || null,
+    };
+  });
 
-  const userName = actualProfile?.name || 'User';
+  const userName = profile?.name || 'User';
 
   if (!userId) {
     return (
@@ -156,12 +145,12 @@ export default function UserProfile() {
         <div className="p-4 border-b border-border">
           <div className="flex items-center gap-4 mb-4">
             <button
-              onClick={() => actualProfile?.avatar_url && setAvatarFullscreen(true)}
-              className={actualProfile?.avatar_url ? 'cursor-pointer' : 'cursor-default'}
+              onClick={() => profile?.avatar_url && setAvatarFullscreen(true)}
+              className={profile?.avatar_url ? 'cursor-pointer' : 'cursor-default'}
             >
               <UserAvatar 
                 name={userName} 
-                avatarUrl={actualProfile?.avatar_url} 
+                avatarUrl={profile?.avatar_url}
                 size="lg" 
               />
             </button>
@@ -199,7 +188,7 @@ export default function UserProfile() {
                 <div className="flex items-center gap-1 text-accent mb-1">
                   <Target size={16} />
                 </div>
-                <span className="text-xl font-bold">{actualGoals?.length || 0}</span>
+                <span className="text-xl font-bold">{goals?.length || 0}</span>
                 <span className="text-xs text-muted-foreground">goals</span>
               </motion.div>
 
@@ -216,15 +205,13 @@ export default function UserProfile() {
                 <span className="text-xs text-muted-foreground">done</span>
               </motion.div>
 
-              {!isSample && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.25 }}
-                >
-                  <FriendsListDialog userId={userId} userName={userName} />
-                </motion.div>
-              )}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.25 }}
+              >
+                <FriendsListDialog userId={userId} userName={userName} />
+              </motion.div>
             </div>
           )}
         </div>
@@ -236,9 +223,9 @@ export default function UserProfile() {
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
           ) : goalsWithStats.length > 0 ? (
-            <GoalProgressSection 
-              goals={goalsWithStats} 
-              completions={actualCompletions || []} 
+              <GoalProgressSection 
+                goals={goalsWithStats} 
+                completions={completions || []}
             />
           ) : (
             <div className="py-12 text-center">
@@ -252,7 +239,7 @@ export default function UserProfile() {
 
       {/* Fullscreen avatar modal */}
       <AnimatePresence>
-        {avatarFullscreen && actualProfile?.avatar_url && (
+        {avatarFullscreen && profile?.avatar_url && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -274,7 +261,7 @@ export default function UserProfile() {
               onClick={(e) => e.stopPropagation()}
             >
               <img
-                src={actualProfile.avatar_url}
+                src={profile.avatar_url}
                 alt={`${userName}'s profile`}
                 className="w-full h-full object-cover"
               />
