@@ -237,6 +237,7 @@ export function useGoals() {
       queryClient.invalidateQueries({ queryKey: ['goals-with-stats'] });
       queryClient.invalidateQueries({ queryKey: ['completions'] });
       queryClient.invalidateQueries({ queryKey: ['feed'] });
+      queryClient.invalidateQueries({ queryKey: ['today-completions'] });
       toast({ title: 'Posted to feed!' });
     },
     onError: () => {
@@ -260,6 +261,7 @@ export function useGoals() {
       queryClient.invalidateQueries({ queryKey: ['goals-with-stats'] });
       queryClient.invalidateQueries({ queryKey: ['completions'] });
       queryClient.invalidateQueries({ queryKey: ['feed'] });
+      queryClient.invalidateQueries({ queryKey: ['today-completions'] });
       toast({ title: 'Post deleted' });
     },
     onError: () => {
