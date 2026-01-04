@@ -4,6 +4,7 @@ import { Header } from '@/components/Header';
 import { BottomNav } from '@/components/BottomNav';
 import { Paywall } from '@/components/Paywall';
 import { UserAvatar } from '@/components/UserAvatar';
+import { useProfile } from '@/hooks/useProfile';
 
 const leaderboardData = {
   mostConsistent: [
@@ -22,10 +23,18 @@ const leaderboardData = {
   ],
 };
 
+interface LeaderboardItem {
+  name: string;
+  score: string;
+  subtitle: string;
+  isYou?: boolean;
+  avatarUrl?: string | null;
+}
+
 interface LeaderboardSectionProps {
   title: string;
   icon: typeof TrendingUp;
-  data: typeof leaderboardData.mostConsistent;
+  data: LeaderboardItem[];
 }
 
 function LeaderboardSection({ title, icon: Icon, data }: LeaderboardSectionProps) {
@@ -39,7 +48,7 @@ function LeaderboardSection({ title, icon: Icon, data }: LeaderboardSectionProps
       <div className="space-y-2 px-4">
         {data.map((item, index) => (
           <motion.div
-            key={item.name}
+            key={item.name + index}
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: index * 0.05 }}
@@ -50,7 +59,7 @@ function LeaderboardSection({ title, icon: Icon, data }: LeaderboardSectionProps
             <span className="w-6 text-sm font-medium text-muted-foreground">
               {index + 1}
             </span>
-            <UserAvatar name={item.name} size="md" />
+            <UserAvatar name={item.name} avatarUrl={item.avatarUrl} size="sm" />
             <div className="flex-1">
               <p className="text-sm font-medium">{item.name}</p>
               <p className="text-xs text-muted-foreground">{item.subtitle}</p>
@@ -62,8 +71,18 @@ function LeaderboardSection({ title, icon: Icon, data }: LeaderboardSectionProps
     </section>
   );
 }
-
 export default function Leaderboard() {
+  const { profile } = useProfile();
+
+  // Add user's avatar to "You" entries
+  const enrichedConsistent = leaderboardData.mostConsistent.map(item => 
+    item.isYou ? { ...item, avatarUrl: profile?.avatar_url } : item
+  );
+  
+  const enrichedImproved = leaderboardData.mostImproved.map(item => 
+    item.isYou ? { ...item, avatarUrl: profile?.avatar_url } : item
+  );
+
   return (
     <div className="min-h-screen bg-background pb-24">
       <Header title="This Week" />
@@ -72,13 +91,13 @@ export default function Leaderboard() {
         <LeaderboardSection
           title="Most Consistent"
           icon={TrendingUp}
-          data={leaderboardData.mostConsistent}
+          data={enrichedConsistent}
         />
 
         <LeaderboardSection
           title="Most Improved"
           icon={Zap}
-          data={leaderboardData.mostImproved}
+          data={enrichedImproved}
         />
 
         <p className="text-xs text-center text-muted-foreground mt-6 px-4">
