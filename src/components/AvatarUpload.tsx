@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Camera, Loader2, User } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -33,6 +33,11 @@ export function AvatarUpload({
   const [uploading, setUploading] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState(currentAvatarUrl);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Sync avatarUrl with prop when it changes (e.g., after profile loads)
+  useEffect(() => {
+    setAvatarUrl(currentAvatarUrl);
+  }, [currentAvatarUrl]);
 
   const userName = user?.user_metadata?.name || user?.email?.split('@')[0] || 'U';
 
