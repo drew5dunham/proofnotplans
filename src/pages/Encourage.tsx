@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Loader2, Send, Inbox, MessageCircle, Lock, Target, Plus } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { BottomNav } from '@/components/BottomNav';
 import { Paywall } from '@/components/Paywall';
@@ -32,9 +32,16 @@ interface ChatState {
   isOpen: boolean;
   friendId: string;
   friendName: string;
+  encouragement?: {
+    emoji?: string | null;
+    message?: string | null;
+    created_at: string;
+  };
 }
 
 export default function Encourage() {
+  const [searchParams] = useSearchParams();
+  const defaultTab = searchParams.get('tab') === 'received' ? 'received' : 'send';
   const { user } = useAuth();
   const { goals } = useGoals();
   const { hasPostedToday, isLoading: loadingPosted } = useHasPostedToday();
@@ -48,7 +55,7 @@ export default function Encourage() {
   const [selectedEmoji, setSelectedEmoji] = useState<string | null>(null);
   const [customMessage, setCustomMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
-  const [chat, setChat] = useState<ChatState>({ isOpen: false, friendId: '', friendName: '' });
+  const [chat, setChat] = useState<ChatState>({ isOpen: false, friendId: '', friendName: '', encouragement: undefined });
 
   const toggleFriend = (friendId: string) => {
     setSelectedFriends(prev => {
@@ -153,12 +160,12 @@ export default function Encourage() {
     ...sampleReceived
   ];
 
-  const openChat = (senderId: string, senderName: string) => {
-    setChat({ isOpen: true, friendId: senderId, friendName: senderName });
+  const openChat = (senderId: string, senderName: string, encouragement?: { emoji?: string | null; message?: string | null; created_at: string }) => {
+    setChat({ isOpen: true, friendId: senderId, friendName: senderName, encouragement });
   };
 
   const closeChat = () => {
-    setChat({ isOpen: false, friendId: '', friendName: '' });
+    setChat({ isOpen: false, friendId: '', friendName: '', encouragement: undefined });
   };
 
   return (
@@ -166,7 +173,7 @@ export default function Encourage() {
       <Header title="Encourage" />
       
       <main className="max-w-md mx-auto px-4">
-        <Tabs defaultValue="send" className="w-full">
+        <Tabs defaultValue={defaultTab} className="w-full">
           <TabsList className="w-full mb-4">
             <TabsTrigger value="send" className="flex-1 gap-1.5">
               <Send size={14} />
@@ -348,7 +355,11 @@ export default function Encourage() {
                     transition={{ delay: index * 0.05 }}
                     onClick={() => {
                       if (!enc.read_at) handleMarkRead(enc.id);
-                      openChat(enc.sender_id, enc.sender_name);
+                      openChat(enc.sender_id, enc.sender_name, {
+                        emoji: enc.emoji,
+                        message: enc.message,
+                        created_at: enc.created_at
+                      });
                     }}
                     className={`p-4 rounded-2xl cursor-pointer transition-colors hover:bg-muted ${
                       !enc.read_at 
@@ -395,6 +406,7 @@ export default function Encourage() {
           friendId={chat.friendId}
           friendName={chat.friendName}
           onClose={closeChat}
+          initialEncouragement={chat.encouragement}
         />
       )}
     </div>

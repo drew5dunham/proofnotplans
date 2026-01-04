@@ -12,9 +12,14 @@ interface ChatDialogProps {
   friendId: string;
   friendName: string;
   onClose: () => void;
+  initialEncouragement?: {
+    emoji?: string | null;
+    message?: string | null;
+    created_at: string;
+  };
 }
 
-export function ChatDialog({ friendId, friendName, onClose }: ChatDialogProps) {
+export function ChatDialog({ friendId, friendName, onClose, initialEncouragement }: ChatDialogProps) {
   const { user } = useAuth();
   const { data: messages, isLoading } = useMessages(friendId);
   const sendMessage = useSendMessage();
@@ -73,38 +78,67 @@ export function ChatDialog({ friendId, friendName, onClose }: ChatDialogProps) {
           <div className="flex justify-center py-8">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
-        ) : messages && messages.length > 0 ? (
-          <AnimatePresence initial={false}>
-            {messages.map((message) => {
-              const isMe = message.sender_id === user?.id;
-              return (
-                <motion.div
-                  key={message.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div
-                    className={`max-w-[75%] px-3 py-2 ${
-                      isMe
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted text-foreground'
-                    }`}
-                  >
-                    <p className="text-sm break-words">{message.content}</p>
-                    <p className={`text-[10px] mt-1 ${isMe ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
-                      {formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}
-                    </p>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </AnimatePresence>
         ) : (
-          <div className="text-center py-8 text-muted-foreground">
-            <p>No messages yet</p>
-            <p className="text-sm mt-1">Start the conversation!</p>
-          </div>
+          <>
+            {/* Show initial encouragement if present */}
+            {initialEncouragement && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex justify-start"
+              >
+                <div className="max-w-[75%] px-3 py-2 bg-primary/20 text-foreground rounded-xl border border-primary/30">
+                  <div className="flex items-center gap-2">
+                    {initialEncouragement.emoji && (
+                      <span className="text-xl">{initialEncouragement.emoji}</span>
+                    )}
+                    <span className="text-xs font-medium text-primary">Encouragement</span>
+                  </div>
+                  {initialEncouragement.message && (
+                    <p className="text-sm break-words mt-1">"{initialEncouragement.message}"</p>
+                  )}
+                  <p className="text-[10px] mt-1 text-muted-foreground">
+                    {formatDistanceToNow(new Date(initialEncouragement.created_at), { addSuffix: true })}
+                  </p>
+                </div>
+              </motion.div>
+            )}
+            
+            {/* Messages */}
+            {messages && messages.length > 0 ? (
+              <AnimatePresence initial={false}>
+                {messages.map((message) => {
+                  const isMe = message.sender_id === user?.id;
+                  return (
+                    <motion.div
+                      key={message.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
+                    >
+                      <div
+                        className={`max-w-[75%] px-3 py-2 rounded-xl ${
+                          isMe
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-muted text-foreground'
+                        }`}
+                      >
+                        <p className="text-sm break-words">{message.content}</p>
+                        <p className={`text-[10px] mt-1 ${isMe ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
+                          {formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}
+                        </p>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
+            ) : !initialEncouragement ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>No messages yet</p>
+                <p className="text-sm mt-1">Start the conversation!</p>
+              </div>
+            ) : null}
+          </>
         )}
         <div ref={messagesEndRef} />
       </div>

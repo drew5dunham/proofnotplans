@@ -162,7 +162,11 @@ export function Header({ title, rightAction }: HeaderProps) {
                     {encouragements && encouragements.map((enc: any) => (
                       <div 
                         key={enc.id} 
-                        className={`p-3 rounded-xl ${!enc.read_at ? 'bg-primary/10' : 'hover:bg-muted'}`}
+                        onClick={() => {
+                          setPopoverOpen(false);
+                          navigate('/encourage?tab=received');
+                        }}
+                        className={`p-3 rounded-xl cursor-pointer transition-colors ${!enc.read_at ? 'bg-primary/10' : 'hover:bg-muted'}`}
                       >
                         <p className="font-medium text-sm">
                           {enc.emoji && <span className="mr-1">{enc.emoji}</span>}
