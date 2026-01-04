@@ -166,8 +166,6 @@ export default function Encourage() {
       <Header title="Encourage" />
       
       <main className="max-w-md mx-auto px-4">
-        <AddFriendsPrompt />
-        
         <Tabs defaultValue="send" className="w-full">
           <TabsList className="w-full mb-4">
             <TabsTrigger value="send" className="flex-1 gap-1.5">
@@ -186,6 +184,8 @@ export default function Encourage() {
           </TabsList>
 
           <TabsContent value="send">
+            <AddFriendsPrompt />
+            
             {/* Gate: Must post today to send encouragements */}
             {!hasPostedToday && !loadingPosted ? (
               <div className="py-8 text-center">
