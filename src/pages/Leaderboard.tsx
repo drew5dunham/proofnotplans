@@ -1,33 +1,18 @@
 import { motion } from 'framer-motion';
-import { TrendingUp, Zap } from 'lucide-react';
+import { TrendingUp, Zap, Users } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { BottomNav } from '@/components/BottomNav';
 import { Paywall } from '@/components/Paywall';
 import { UserAvatar } from '@/components/UserAvatar';
-import { useProfile } from '@/hooks/useProfile';
-
-const leaderboardData = {
-  mostConsistent: [
-    { name: 'Elena', score: '100%', subtitle: '12/12 completed' },
-    { name: 'Marcus', score: '92%', subtitle: '11/12 completed' },
-    { name: 'Jordan', score: '83%', subtitle: '10/12 completed' },
-    { name: 'Sam', score: '75%', subtitle: '9/12 completed' },
-    { name: 'You', score: '78%', subtitle: '7/9 completed', isYou: true },
-  ],
-  mostImproved: [
-    { name: 'Jordan', score: '+40%', subtitle: 'vs last week' },
-    { name: 'Sam', score: '+25%', subtitle: 'vs last week' },
-    { name: 'Marcus', score: '+15%', subtitle: 'vs last week' },
-    { name: 'You', score: '+12%', subtitle: 'vs last week', isYou: true },
-    { name: 'Elena', score: '+5%', subtitle: 'vs last week' },
-  ],
-};
+import { useLeaderboard } from '@/hooks/useLeaderboard';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface LeaderboardItem {
+  userId: string;
   name: string;
   score: string;
   subtitle: string;
-  isYou?: boolean;
+  isYou: boolean;
   avatarUrl?: string | null;
 }
 
@@ -35,9 +20,45 @@ interface LeaderboardSectionProps {
   title: string;
   icon: typeof TrendingUp;
   data: LeaderboardItem[];
+  isLoading: boolean;
 }
 
-function LeaderboardSection({ title, icon: Icon, data }: LeaderboardSectionProps) {
+function LeaderboardSection({ title, icon: Icon, data, isLoading }: LeaderboardSectionProps) {
+  if (isLoading) {
+    return (
+      <section className="mb-6">
+        <div className="flex items-center gap-2 mb-3 px-4">
+          <Icon size={16} className="text-primary" />
+          <h2 className="font-semibold text-sm">{title}</h2>
+        </div>
+        <div className="space-y-2 px-4">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-16 w-full rounded-xl" />
+          ))}
+        </div>
+      </section>
+    );
+  }
+
+  if (data.length === 0) {
+    return (
+      <section className="mb-6">
+        <div className="flex items-center gap-2 mb-3 px-4">
+          <Icon size={16} className="text-primary" />
+          <h2 className="font-semibold text-sm">{title}</h2>
+        </div>
+        <div className="px-4">
+          <div className="bg-card rounded-xl p-6 text-center">
+            <Users className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
+            <p className="text-sm text-muted-foreground">
+              Add friends to see the leaderboard!
+            </p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="mb-6">
       <div className="flex items-center gap-2 mb-3 px-4">
@@ -48,7 +69,7 @@ function LeaderboardSection({ title, icon: Icon, data }: LeaderboardSectionProps
       <div className="space-y-2 px-4">
         {data.map((item, index) => (
           <motion.div
-            key={item.name + index}
+            key={item.userId}
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: index * 0.05 }}
@@ -71,17 +92,9 @@ function LeaderboardSection({ title, icon: Icon, data }: LeaderboardSectionProps
     </section>
   );
 }
-export default function Leaderboard() {
-  const { profile } = useProfile();
 
-  // Add user's avatar to "You" entries
-  const enrichedConsistent = leaderboardData.mostConsistent.map(item => 
-    item.isYou ? { ...item, avatarUrl: profile?.avatar_url } : item
-  );
-  
-  const enrichedImproved = leaderboardData.mostImproved.map(item => 
-    item.isYou ? { ...item, avatarUrl: profile?.avatar_url } : item
-  );
+export default function Leaderboard() {
+  const { data, isLoading } = useLeaderboard();
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -91,13 +104,15 @@ export default function Leaderboard() {
         <LeaderboardSection
           title="Most Consistent"
           icon={TrendingUp}
-          data={enrichedConsistent}
+          data={data?.mostConsistent || []}
+          isLoading={isLoading}
         />
 
         <LeaderboardSection
           title="Most Improved"
           icon={Zap}
-          data={enrichedImproved}
+          data={data?.mostImproved || []}
+          isLoading={isLoading}
         />
 
         <p className="text-xs text-center text-muted-foreground mt-6 px-4">
