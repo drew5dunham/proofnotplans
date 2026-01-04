@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Users, Loader2, UserPlus, Search, Check } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -17,8 +17,10 @@ interface FriendsListDialogProps {
 
 export function FriendsListDialog({ userId, userName }: FriendsListDialogProps) {
   const navigate = useNavigate();
-  const [open, setOpen] = useState(false);
-  const [showAddFriend, setShowAddFriend] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const startOpen = searchParams.get('friends') === 'true';
+  const [open, setOpen] = useState(startOpen);
+  const [showAddFriend, setShowAddFriend] = useState(startOpen); // Start in add mode if opened via link
   const [searchTerm, setSearchTerm] = useState('');
   const [sentRequests, setSentRequests] = useState<Set<string>>(new Set());
   
@@ -26,6 +28,13 @@ export function FriendsListDialog({ userId, userName }: FriendsListDialogProps) 
   const { data: friendCount } = useFriendCount(userId);
   const { data: searchResults, isLoading: searching } = useSearchUsers(searchTerm);
   const sendRequest = useSendFriendRequest();
+
+  // Clear the query param when dialog opens
+  useEffect(() => {
+    if (startOpen && open) {
+      setSearchParams({}, { replace: true });
+    }
+  }, [startOpen, open, setSearchParams]);
 
   const handleFriendClick = (friendId: string) => {
     navigate(`/user/${friendId}`);

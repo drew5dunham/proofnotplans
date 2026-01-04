@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Loader2, Target, Plus, Users } from 'lucide-react';
+import { Loader2, Target, Plus, Users, UserPlus } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useFeed, useCompletions, useGoals, DbCompletion } from '@/hooks/useGoals';
 import { useAuth } from '@/hooks/useAuth';
 import { useGroups } from '@/hooks/useGroups';
+import { useFriendCount } from '@/hooks/useFriends';
 import { supabase } from '@/integrations/supabase/client';
 import { Header } from '@/components/Header';
 import { BottomNav } from '@/components/BottomNav';
@@ -32,6 +33,7 @@ export default function Feed() {
   const { data: myCompletions } = useCompletions();
   const { goals, deleteCompletion, isDeleting } = useGoals();
   const { groups } = useGroups();
+  const { data: friendCount } = useFriendCount();
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [membersOpen, setMembersOpen] = useState(false);
 
@@ -109,6 +111,7 @@ export default function Feed() {
   );
 
   const hasGoals = goals && goals.length > 0;
+  const hasFriends = (friendCount || 0) > 0;
 
   // Use group feed when a group is selected, otherwise use main feed
   const filteredPosts = selectedGroupId ? groupFeed : feedPosts;
@@ -173,6 +176,31 @@ export default function Feed() {
                     <Link to="/goals?add=true">Add Goals First</Link>
                   </Button>
                 )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Add friends prompt for users with no friends */}
+        {user && hasGoals && !hasFriends && (
+          <div className="mb-4 p-4 bg-blue-500/10 rounded-2xl">
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-blue-500/20 text-blue-400 rounded-xl">
+                <Users size={20} />
+              </div>
+              <div className="flex-1">
+                <p className="font-semibold text-foreground text-sm">
+                  Add friends to see their posts
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Connect with friends to see their goal progress in your feed.
+                </p>
+                <Button asChild size="sm" className="mt-3 rounded-full">
+                  <Link to="/profile?friends=true">
+                    <UserPlus size={16} className="mr-1.5" />
+                    Add Friends
+                  </Link>
+                </Button>
               </div>
             </div>
           </div>
