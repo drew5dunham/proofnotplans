@@ -93,7 +93,7 @@ export function GroupsSection() {
                         e.stopPropagation();
                         setViewMembersGroup(group);
                       }}
-                      className="text-xs text-muted-foreground hover:text-foreground hover:underline transition-colors"
+                      className="text-xs text-primary hover:text-primary/80 underline cursor-pointer transition-colors"
                     >
                       {group.member_count} member{group.member_count !== 1 ? 's' : ''}
                     </button>
