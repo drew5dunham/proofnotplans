@@ -1,13 +1,15 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Heart, MessageCircle, Check, X, ThumbsUp, Flame, Trash2 } from 'lucide-react';
+import { Heart, MessageCircle, Check, X, ThumbsUp, Flame, Trash2, Lock } from 'lucide-react';
 import { CategoryIcon, getCategoryLabel } from './CategoryIcon';
 import { CommentsDrawer } from './CommentsDrawer';
 import { useCommentCount } from '@/hooks/useComments';
+import { useHasPostedToday } from '@/hooks/useHasPostedToday';
 import { formatDistanceToNow } from 'date-fns';
 import type { Category } from '@/types';
 import type { DbCompletion } from '@/hooks/useGoals';
+import { toast } from '@/hooks/use-toast';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,6 +38,7 @@ export function FeedPost({ post, index, autoOpenComments = false, currentUserId,
   const postRef = useRef<HTMLElement>(null);
   const navigate = useNavigate();
   const { data: commentCount } = useCommentCount(post.id);
+  const { hasPostedToday, isLoggedIn } = useHasPostedToday();
 
   const isOwnPost = currentUserId === post.user_id;
 
@@ -54,8 +57,26 @@ export function FeedPost({ post, index, autoOpenComments = false, currentUserId,
   }, [autoOpenComments]);
 
   const handleLike = () => {
+    if (!isLoggedIn || !hasPostedToday) {
+      toast({
+        title: "Post first to interact",
+        description: "Report on a goal today to like and comment on posts.",
+      });
+      return;
+    }
     setLiked(!liked);
     setLikeCount(prev => liked ? prev - 1 : prev + 1);
+  };
+
+  const handleCommentClick = () => {
+    if (!isLoggedIn || !hasPostedToday) {
+      toast({
+        title: "Post first to interact",
+        description: "Report on a goal today to like and comment on posts.",
+      });
+      return;
+    }
+    setCommentsOpen(true);
   };
 
   const handleProfileClick = () => {
@@ -199,17 +220,31 @@ export function FeedPost({ post, index, autoOpenComments = false, currentUserId,
         <button
           onClick={handleLike}
           className={`flex items-center gap-2 text-sm py-2 transition-colors ${
-            liked ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
+            !isLoggedIn || !hasPostedToday 
+              ? 'text-muted-foreground/50 cursor-not-allowed'
+              : liked ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
           }`}
         >
-          <Heart size={18} fill={liked ? 'currentColor' : 'none'} />
+          {!isLoggedIn || !hasPostedToday ? (
+            <Lock size={16} />
+          ) : (
+            <Heart size={18} fill={liked ? 'currentColor' : 'none'} />
+          )}
           {likeCount > 0 && <span className="font-medium">{likeCount}</span>}
         </button>
         <button 
-          onClick={() => setCommentsOpen(true)}
-          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors py-2"
+          onClick={handleCommentClick}
+          className={`flex items-center gap-2 text-sm py-2 transition-colors ${
+            !isLoggedIn || !hasPostedToday 
+              ? 'text-muted-foreground/50 cursor-not-allowed'
+              : 'text-muted-foreground hover:text-foreground'
+          }`}
         >
-          <MessageCircle size={18} />
+          {!isLoggedIn || !hasPostedToday ? (
+            <Lock size={16} />
+          ) : (
+            <MessageCircle size={18} />
+          )}
           {(commentCount || 0) > 0 && <span className="font-medium">{commentCount}</span>}
         </button>
       </div>
