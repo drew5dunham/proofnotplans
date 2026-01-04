@@ -97,9 +97,18 @@ export default function Chat() {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-background flex flex-col max-w-md mx-auto h-[100dvh]">
-      {/* iMessage-style Header - Fixed at top */}
-      <header className="shrink-0 bg-card/80 backdrop-blur-lg border-b border-border px-2 py-2 flex items-center gap-2 sticky top-0 z-10" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+    <div 
+      className="fixed inset-0 z-50 bg-background flex flex-col max-w-md mx-auto"
+      style={{ 
+        height: 'calc(100dvh)',
+        minHeight: '-webkit-fill-available'
+      }}
+    >
+      {/* iMessage-style Header - Absolutely fixed at top */}
+      <header 
+        className="shrink-0 bg-card/80 backdrop-blur-lg border-b border-border px-2 py-2 flex items-center gap-2 z-10"
+        style={{ paddingTop: 'env(safe-area-inset-top)' }}
+      >
         <Button 
           variant="ghost" 
           size="sm" 
@@ -115,7 +124,10 @@ export default function Chat() {
       </header>
 
       {/* Messages Area - Scrollable middle section */}
-      <div className="flex-1 overflow-y-auto px-3 py-4 overscroll-contain">
+      <div 
+        className="flex-1 overflow-y-auto px-3 py-4 overscroll-contain"
+        style={{ WebkitOverflowScrolling: 'touch' }}
+      >
         {isLoading ? (
           <div className="flex justify-center py-8">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -223,8 +235,11 @@ export default function Chat() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* iMessage-style Input - Fixed at bottom */}
-      <div className="shrink-0 bg-card/80 backdrop-blur-lg border-t border-border p-2 sticky bottom-0" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+      {/* iMessage-style Input - Fixed at bottom, uses env() for keyboard */}
+      <div 
+        className="shrink-0 bg-card/80 backdrop-blur-lg border-t border-border p-2"
+        style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 8px)' }}
+      >
         <div className="flex items-center gap-2 bg-muted rounded-full px-4 py-1">
           <Input
             ref={inputRef}
