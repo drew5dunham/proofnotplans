@@ -8,14 +8,17 @@ import { GoalProgressSection } from '@/components/GoalProgressSection';
 import { FriendsListDialog } from '@/components/FriendsListDialog';
 import { UserAvatar } from '@/components/UserAvatar';
 import { isSampleUser, getSampleUserData } from '@/lib/sampleData';
+import { useAuth } from '@/hooks/useAuth';
 import type { GoalWithStats, DbCompletion } from '@/hooks/useGoals';
 
 export default function UserProfile() {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
-  
+  const { user } = useAuth();
+
   const isSample = userId ? isSampleUser(userId) : false;
   const sampleData = userId ? getSampleUserData(userId) : null;
+  const isOwnProfile = !!userId && !!user?.id && user.id === userId;
 
   // Fetch user profile (skip for sample users)
   const { data: profile, isLoading: profileLoading } = useQuery({
@@ -35,15 +38,21 @@ export default function UserProfile() {
 
   // Fetch user's goals (skip for sample users)
   const { data: goals, isLoading: goalsLoading } = useQuery({
-    queryKey: ['user-goals', userId],
+    queryKey: ['user-goals', userId, isOwnProfile],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('goals')
         .select('*')
         .eq('user_id', userId!)
-        .eq('is_active', true)
         .order('created_at', { ascending: false });
-      
+
+      // For your own profile we only show active goals; for other users we include inactive goals
+      // so their reported history still has context.
+      if (isOwnProfile) {
+        query = query.eq('is_active', true);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
       return data;
     },
