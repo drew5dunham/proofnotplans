@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import { Loader2, Send, Inbox, MessageCircle, Lock, Target, Plus } from 'lucide-react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useState } from 'react';
+import { Loader2, Send, Inbox, MessageCircle, Target, Plus } from 'lucide-react';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { BottomNav } from '@/components/BottomNav';
 import { Paywall } from '@/components/Paywall';
@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ChatDialog } from '@/components/ChatDialog';
 import { ReportGoalDialog } from '@/components/ReportGoalDialog';
 import { UserAvatar } from '@/components/UserAvatar';
 import { AddFriendsPrompt } from '@/components/AddFriendsPrompt';
@@ -28,19 +27,9 @@ import { formatDistanceToNow } from 'date-fns';
 
 const QUICK_EMOJIS = ['🔥', '💪', '❤️', '⭐', '🚀'];
 
-interface ChatState {
-  isOpen: boolean;
-  friendId: string;
-  friendName: string;
-  encouragement?: {
-    emoji?: string | null;
-    message?: string | null;
-    created_at: string;
-  };
-}
-
 export default function Encourage() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const defaultTab = searchParams.get('tab') === 'received' ? 'received' : 'send';
   const { user } = useAuth();
   const { goals } = useGoals();
@@ -55,7 +44,6 @@ export default function Encourage() {
   const [selectedEmoji, setSelectedEmoji] = useState<string | null>(null);
   const [customMessage, setCustomMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
-  const [chat, setChat] = useState<ChatState>({ isOpen: false, friendId: '', friendName: '', encouragement: undefined });
 
   const toggleFriend = (friendId: string) => {
     setSelectedFriends(prev => {
@@ -161,11 +149,11 @@ export default function Encourage() {
   ];
 
   const openChat = (senderId: string, senderName: string, encouragement?: { emoji?: string | null; message?: string | null; created_at: string }) => {
-    setChat({ isOpen: true, friendId: senderId, friendName: senderName, encouragement });
-  };
-
-  const closeChat = () => {
-    setChat({ isOpen: false, friendId: '', friendName: '', encouragement: undefined });
+    const params = new URLSearchParams({ name: senderName });
+    if (encouragement?.emoji) params.set('emoji', encouragement.emoji);
+    if (encouragement?.message) params.set('message', encouragement.message);
+    if (encouragement?.created_at) params.set('timestamp', encouragement.created_at);
+    navigate(`/chat/${senderId}?${params.toString()}`);
   };
 
   return (
@@ -399,16 +387,6 @@ export default function Encourage() {
 
       <BottomNav />
       <Paywall />
-
-      {/* Chat Dialog */}
-      {chat.isOpen && (
-        <ChatDialog
-          friendId={chat.friendId}
-          friendName={chat.friendName}
-          onClose={closeChat}
-          initialEncouragement={chat.encouragement}
-        />
-      )}
     </div>
   );
 }
