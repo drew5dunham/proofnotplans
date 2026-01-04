@@ -16,11 +16,9 @@ import { useGoals } from '@/hooks/useGoals';
 import { useHasPostedToday } from '@/hooks/useHasPostedToday';
 import { 
   useAllFriends, 
-  useSendEncouragement, 
-  useReceivedEncouragements,
-  useUnreadEncouragementCount,
-  useMarkEncouragementRead
+  useSendEncouragement
 } from '@/hooks/useEncouragements';
+import { useConversations, useUnreadConversationCount } from '@/hooks/useConversations';
 import { toast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 import { formatDistanceToNow } from 'date-fns';
@@ -35,10 +33,9 @@ export default function Encourage() {
   const { goals } = useGoals();
   const { hasPostedToday, isLoading: loadingPosted } = useHasPostedToday();
   const { data: friends, isLoading: loadingFriends } = useAllFriends();
-  const { data: receivedEncouragements, isLoading: loadingReceived } = useReceivedEncouragements();
-  const { data: unreadCount } = useUnreadEncouragementCount();
+  const { data: conversations, isLoading: loadingConversations } = useConversations();
+  const { data: unreadCount } = useUnreadConversationCount();
   const sendEncouragement = useSendEncouragement();
-  const markRead = useMarkEncouragementRead();
   
   const [selectedFriends, setSelectedFriends] = useState<Set<string>>(new Set());
   const [selectedEmoji, setSelectedEmoji] = useState<string | null>(null);
@@ -118,42 +115,11 @@ export default function Encourage() {
     }
   };
 
-  const handleMarkRead = async (id: string) => {
-    try {
-      await markRead.mutateAsync(id);
-    } catch (error) {
-      // Silently fail for sample data
-    }
-  };
-
   const allSelected = friends && friends.length > 0 && selectedFriends.size === friends.length;
 
-  // Sample received encouragements for demo
-  const sampleReceived = [
-    { id: 'sample-r1', sender_id: 'sample-s1', emoji: '🔥', message: 'You got this today!', sender_name: 'Sarah M.', created_at: new Date(Date.now() - 3600000).toISOString(), read_at: null },
-    { id: 'sample-r2', sender_id: 'sample-s2', emoji: '💪', message: null, sender_name: 'Jake R.', created_at: new Date(Date.now() - 7200000).toISOString(), read_at: new Date().toISOString() },
-    { id: 'sample-r3', sender_id: 'sample-s3', emoji: '❤️', message: 'Crush those goals!', sender_name: 'Morgan L.', created_at: new Date(Date.now() - 86400000).toISOString(), read_at: new Date().toISOString() },
-  ];
-
-  const allReceived = [
-    ...(receivedEncouragements || []).map((enc: any) => ({
-      id: enc.id,
-      sender_id: enc.sender_id,
-      emoji: enc.emoji,
-      message: enc.message,
-      sender_name: enc.sender?.name || 'Someone',
-      created_at: enc.created_at,
-      read_at: enc.read_at
-    })),
-    ...sampleReceived
-  ];
-
-  const openChat = (senderId: string, senderName: string, encouragement?: { emoji?: string | null; message?: string | null; created_at: string }) => {
-    const params = new URLSearchParams({ name: senderName });
-    if (encouragement?.emoji) params.set('emoji', encouragement.emoji);
-    if (encouragement?.message) params.set('message', encouragement.message);
-    if (encouragement?.created_at) params.set('timestamp', encouragement.created_at);
-    navigate(`/chat/${senderId}?${params.toString()}`);
+  const openChat = (friendId: string, friendName: string) => {
+    const params = new URLSearchParams({ name: friendName });
+    navigate(`/chat/${friendId}?${params.toString()}`);
   };
 
   return (
@@ -322,60 +288,59 @@ export default function Encourage() {
           </TabsContent>
 
           <TabsContent value="received">
-            {loadingReceived ? (
+            {loadingConversations ? (
               <div className="py-12 flex justify-center">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
-            ) : allReceived.length === 0 ? (
+            ) : !conversations || conversations.length === 0 ? (
               <div className="py-12 text-center">
-                <p className="text-muted-foreground">No encouragements yet</p>
+                <p className="text-muted-foreground">No messages yet</p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  When friends send you encouragement, it will appear here.
+                  When friends send you messages, they will appear here.
                 </p>
               </div>
             ) : (
-              <div className="space-y-3">
-                {allReceived.map((enc, index) => (
+              <div className="space-y-2">
+                {conversations.map((conv, index) => (
                   <motion.div
-                    key={enc.id}
+                    key={conv.friendId}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.05 }}
-                    onClick={() => {
-                      if (!enc.read_at) handleMarkRead(enc.id);
-                      openChat(enc.sender_id, enc.sender_name, {
-                        emoji: enc.emoji,
-                        message: enc.message,
-                        created_at: enc.created_at
-                      });
-                    }}
+                    onClick={() => openChat(conv.friendId, conv.friendName)}
                     className={`p-4 rounded-2xl cursor-pointer transition-colors hover:bg-muted ${
-                      !enc.read_at 
+                      conv.unreadCount > 0 
                         ? 'bg-primary/10' 
                         : 'bg-card'
                     }`}
                   >
-                    <div className="flex items-start gap-3">
-                      {enc.emoji && (
-                        <span className="text-2xl">{enc.emoji}</span>
-                      )}
+                    <div className="flex items-center gap-3">
+                      <UserAvatar 
+                        name={conv.friendName} 
+                        avatarUrl={conv.friendAvatarUrl} 
+                        size="md" 
+                      />
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm">
-                          {enc.sender_name}
-                          {!enc.read_at && (
-                            <span className="ml-2 text-[10px] font-bold text-accent">NEW</span>
-                          )}
-                        </p>
-                        {enc.message && (
-                          <p className="text-sm text-muted-foreground mt-0.5">
-                            "{enc.message}"
+                        <div className="flex items-center justify-between">
+                          <p className="font-semibold text-sm truncate">
+                            {conv.friendName}
                           </p>
-                        )}
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {formatDistanceToNow(new Date(enc.created_at), { addSuffix: true })}
-                        </p>
+                          <p className="text-xs text-muted-foreground shrink-0">
+                            {formatDistanceToNow(new Date(conv.lastMessageAt), { addSuffix: false })}
+                          </p>
+                        </div>
+                        <div className="flex items-center justify-between mt-0.5">
+                          <p className="text-sm text-muted-foreground truncate">
+                            {conv.isFromMe && <span className="text-muted-foreground/70">You: </span>}
+                            {conv.lastMessage}
+                          </p>
+                          {conv.unreadCount > 0 && (
+                            <span className="ml-2 h-5 min-w-5 px-1.5 bg-primary text-primary-foreground text-[10px] font-bold rounded-full flex items-center justify-center shrink-0">
+                              {conv.unreadCount}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      <MessageCircle size={16} className="text-muted-foreground mt-1" />
                     </div>
                   </motion.div>
                 ))}

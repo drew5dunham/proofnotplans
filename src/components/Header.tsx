@@ -6,7 +6,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { useReceivedEncouragements, useUnreadEncouragementCount } from '@/hooks/useEncouragements';
+import { useConversations, useUnreadConversationCount } from '@/hooks/useConversations';
 import { useNotifications, useUnreadNotificationCount, useMarkNotificationRead } from '@/hooks/useComments';
 import { useAcceptFriendRequest, useIgnoreFriendRequest } from '@/hooks/useFriendRequests';
 import { formatDistanceToNow } from 'date-fns';
@@ -21,8 +21,8 @@ interface HeaderProps {
 export function Header({ title, rightAction }: HeaderProps) {
   const navigate = useNavigate();
   const [popoverOpen, setPopoverOpen] = useState(false);
-  const { data: encouragements, isLoading: loadingEncouragements } = useReceivedEncouragements();
-  const { data: unreadEncouragementCount } = useUnreadEncouragementCount();
+  const { data: conversations, isLoading: loadingConversations } = useConversations();
+  const { data: unreadConversationCount } = useUnreadConversationCount();
   const { data: notifications, isLoading: loadingNotifications } = useNotifications();
   const { data: unreadNotificationCount } = useUnreadNotificationCount();
   const markNotificationRead = useMarkNotificationRead();
@@ -73,8 +73,8 @@ export function Header({ title, rightAction }: HeaderProps) {
     }
   };
 
-  const totalUnread = (unreadEncouragementCount || 0) + (unreadNotificationCount || 0);
-  const isLoading = loadingEncouragements || loadingNotifications;
+  const totalUnread = (unreadConversationCount || 0) + (unreadNotificationCount || 0);
+  const isLoading = loadingConversations || loadingNotifications;
 
   // Sample notifications for demo
   const sampleNotifications = [
@@ -111,7 +111,7 @@ export function Header({ title, rightAction }: HeaderProps) {
                       // Combine all items with a unified structure for sorting
                       const allItems: Array<{
                         id: string;
-                        type: 'notification' | 'encouragement' | 'sample';
+                        type: 'notification' | 'conversation' | 'sample';
                         created_at: string;
                         data: any;
                       }> = [];
@@ -128,14 +128,14 @@ export function Header({ title, rightAction }: HeaderProps) {
                         });
                       }
 
-                      // Add encouragements
-                      if (encouragements) {
-                        encouragements.forEach((enc: any) => {
+                      // Add conversations with unread messages
+                      if (conversations) {
+                        conversations.filter(c => c.unreadCount > 0).forEach((conv) => {
                           allItems.push({
-                            id: enc.id,
-                            type: 'encouragement',
-                            created_at: enc.created_at,
-                            data: enc
+                            id: conv.friendId,
+                            type: 'conversation',
+                            created_at: conv.lastMessageAt,
+                            data: conv
                           });
                         });
                       }
@@ -215,31 +215,26 @@ export function Header({ title, rightAction }: HeaderProps) {
                           );
                         }
 
-                        if (item.type === 'encouragement') {
-                          const enc = item.data;
-                          const senderName = enc.sender?.name || 'Someone';
+                        if (item.type === 'conversation') {
+                          const conv = item.data;
                           return (
                             <div 
-                              key={enc.id} 
+                              key={conv.friendId} 
                               onClick={() => {
                                 setPopoverOpen(false);
-                                const params = new URLSearchParams({ name: senderName });
-                                if (enc.emoji) params.set('emoji', enc.emoji);
-                                if (enc.message) params.set('message', enc.message);
-                                if (enc.created_at) params.set('timestamp', enc.created_at);
-                                navigate(`/chat/${enc.sender_id}?${params.toString()}`);
+                                const params = new URLSearchParams({ name: conv.friendName });
+                                navigate(`/chat/${conv.friendId}?${params.toString()}`);
                               }}
-                              className={`p-3 rounded-xl cursor-pointer transition-colors ${!enc.read_at ? 'bg-primary/10' : 'hover:bg-muted'}`}
+                              className="p-3 rounded-xl cursor-pointer transition-colors bg-primary/10"
                             >
                               <p className="font-medium text-sm">
-                                {enc.emoji && <span className="mr-1">{enc.emoji}</span>}
-                                {senderName} sent you encouragement!
+                                {conv.friendName} sent you a message
                               </p>
-                              {enc.message && (
-                                <p className="text-muted-foreground text-sm mt-0.5">"{enc.message}"</p>
-                              )}
+                              <p className="text-muted-foreground text-sm mt-0.5 truncate">
+                                {conv.lastMessage}
+                              </p>
                               <p className="text-xs text-muted-foreground mt-1">
-                                {formatDistanceToNow(new Date(enc.created_at), { addSuffix: true })}
+                                {formatDistanceToNow(new Date(conv.lastMessageAt), { addSuffix: true })}
                               </p>
                             </div>
                           );

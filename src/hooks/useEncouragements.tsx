@@ -121,7 +121,7 @@ export function useFriendsToEncourage() {
 // Check if an ID is a sample ID (not a real UUID)
 const isSampleId = (id: string) => id.startsWith('sample-');
 
-// Send encouragement
+// Send encouragement (as a message)
 export function useSendEncouragement() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -136,15 +136,25 @@ export function useSendEncouragement() {
 
       // Skip database insert for sample friends (demo mode)
       if (isSampleId(data.recipient_id)) {
-        // Simulate success for demo purposes
         return;
       }
 
-      const { error } = await supabase.from('encouragements').insert({
+      // Format the message content with emoji and message
+      let content = '';
+      if (data.emoji) {
+        content = data.emoji;
+        if (data.message) {
+          content += ` ${data.message}`;
+        }
+      } else if (data.message) {
+        content = data.message;
+      }
+
+      // Insert as a message instead of encouragement
+      const { error } = await supabase.from('messages').insert({
         sender_id: user.id,
         recipient_id: data.recipient_id,
-        emoji: data.emoji,
-        message: data.message
+        content: content
       });
 
       if (error) throw error;
@@ -156,14 +166,15 @@ export function useSendEncouragement() {
         .eq('id', user.id)
         .single();
 
-      const title = `${profile?.name || 'A friend'} sent you encouragement!`;
-      const body = data.message || `${data.emoji || '💪'} Keep going!`;
+      const title = `${profile?.name || 'A friend'} sent you a message!`;
+      const body = content || '💪 Keep going!';
 
       // Send push notification
-      sendPushNotification(data.recipient_id, title, body, '/encourage');
+      sendPushNotification(data.recipient_id, title, body, '/encourage?tab=received');
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['encouragements'] });
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      queryClient.invalidateQueries({ queryKey: ['messages'] });
     }
   });
 }
