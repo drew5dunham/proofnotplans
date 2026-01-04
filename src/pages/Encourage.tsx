@@ -16,7 +16,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useGoals } from '@/hooks/useGoals';
 import { useHasPostedToday } from '@/hooks/useHasPostedToday';
 import { 
-  useFriendsToEncourage, 
+  useAllFriends, 
   useSendEncouragement, 
   useReceivedEncouragements,
   useUnreadEncouragementCount,
@@ -38,7 +38,7 @@ export default function Encourage() {
   const { user } = useAuth();
   const { goals } = useGoals();
   const { hasPostedToday, isLoading: loadingPosted } = useHasPostedToday();
-  const { data: friends, isLoading: loadingFriends } = useFriendsToEncourage();
+  const { data: friends, isLoading: loadingFriends } = useAllFriends();
   const { data: receivedEncouragements, isLoading: loadingReceived } = useReceivedEncouragements();
   const { data: unreadCount } = useUnreadEncouragementCount();
   const sendEncouragement = useSendEncouragement();
@@ -223,18 +223,18 @@ export default function Encourage() {
               </div>
             ) : !friends || friends.length === 0 ? (
               <div className="py-12 text-center">
-                <p className="text-muted-foreground">All your friends have posted today! 🎉</p>
+                <p className="text-muted-foreground">No friends to encourage yet</p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Check back later to encourage those who need a nudge.
+                  Add friends to start sending encouragements.
                 </p>
               </div>
             ) : (
               <>
-                {/* Friends who haven't posted */}
+                {/* Friends list */}
                 <div className="mb-6">
                   <div className="flex items-center justify-between mb-3">
                     <p className="text-sm font-medium text-foreground">
-                      Friends who haven't posted today
+                      Select friends to encourage
                     </p>
                     <Button
                       variant="ghost"
