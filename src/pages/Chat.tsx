@@ -8,6 +8,8 @@ import { useMessages, useSendMessage } from '@/hooks/useMessages';
 import { useAuth } from '@/hooks/useAuth';
 import { format, isToday, isYesterday, differenceInMinutes } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import type { Message } from '@/hooks/useMessages';
 
 // Helper to group messages by time (5 min threshold)
@@ -35,7 +37,26 @@ export default function Chat() {
   const navigate = useNavigate();
   const { user } = useAuth();
   
-  const friendName = searchParams.get('name') || 'Friend';
+  const friendNameFromUrl = searchParams.get('name') || 'Friend';
+  
+  // Fetch friend's profile for avatar
+  const { data: friendProfile } = useQuery({
+    queryKey: ['profile', friendId],
+    queryFn: async () => {
+      if (!friendId) return null;
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('name, avatar_url')
+        .eq('id', friendId)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!friendId,
+  });
+  
+  const friendName = friendProfile?.name || friendNameFromUrl;
+  const friendAvatarUrl = friendProfile?.avatar_url;
   
   const { data: messages, isLoading } = useMessages(friendId || null);
   const sendMessage = useSendMessage();
@@ -118,7 +139,7 @@ export default function Chat() {
           <ChevronLeft size={28} strokeWidth={2.5} />
         </Button>
         <div className="flex-1 flex flex-col items-center -ml-8">
-          <UserAvatar name={friendName} size="sm" />
+          <UserAvatar name={friendName} avatarUrl={friendAvatarUrl} size="sm" />
           <span className="text-xs font-medium mt-0.5">{friendName}</span>
         </div>
       </header>
@@ -134,7 +155,7 @@ export default function Chat() {
           </div>
         ) : !messages || messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
-            <UserAvatar name={friendName} size="lg" />
+            <UserAvatar name={friendName} avatarUrl={friendAvatarUrl} size="lg" />
             <p className="mt-3 font-semibold">{friendName}</p>
             <p className="text-sm text-muted-foreground mt-1">Start a conversation</p>
           </div>
