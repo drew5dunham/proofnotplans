@@ -156,7 +156,7 @@ export default function GroupFeed() {
 
   if (!group && !loadingGroup) {
     return (
-      <div className="min-h-screen bg-background pb-20">
+      <div className="min-h-screen bg-background" style={{ paddingBottom: 'calc(7rem + env(safe-area-inset-bottom, 0px))' }}>
         <Header title="Group" />
         <main className="max-w-md mx-auto px-4 py-12 text-center">
           <Users size={48} className="mx-auto text-muted-foreground mb-4" />
@@ -171,7 +171,7 @@ export default function GroupFeed() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-background" style={{ paddingBottom: 'calc(7rem + env(safe-area-inset-bottom, 0px))' }}>
       <Header title={group?.name || 'Group Feed'} />
 
       <main className="max-w-md mx-auto px-4">
