@@ -127,7 +127,7 @@ export default function Feed() {
   ) : null;
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="min-h-screen bg-background pb-28" style={{ paddingBottom: 'calc(7rem + env(safe-area-inset-bottom, 0px))' }}>
       <Header title="Feed" rightAction={headerRightAction} />
       
       <main className="max-w-md mx-auto px-4">

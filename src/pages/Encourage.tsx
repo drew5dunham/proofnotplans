@@ -123,7 +123,7 @@ export default function Encourage() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-background" style={{ paddingBottom: 'calc(7rem + env(safe-area-inset-bottom, 0px))' }}>
       <Header title="Encourage" />
       
       <main className="max-w-md mx-auto px-4">

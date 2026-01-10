@@ -57,7 +57,7 @@ export default function Profile() {
   const userName = profile?.name || user?.user_metadata?.name || user?.email?.split('@')[0] || 'User';
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="min-h-screen bg-background" style={{ paddingBottom: 'calc(7rem + env(safe-area-inset-bottom, 0px))' }}>
       <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-xl border-b border-border/50 px-4 py-4">
         <div className="max-w-md mx-auto flex items-center justify-between">
           <h1 className="text-xl font-bold tracking-tight">Profile</h1>

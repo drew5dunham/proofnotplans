@@ -11,7 +11,7 @@ export default function Goals() {
   const { goalsWithStats, isLoading } = useGoals();
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="min-h-screen bg-background" style={{ paddingBottom: 'calc(7rem + env(safe-area-inset-bottom, 0px))' }}>
       <Header title="My Goals" />
 
       <main className="max-w-md mx-auto px-4 py-4 space-y-4">

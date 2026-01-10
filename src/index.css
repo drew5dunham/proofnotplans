@@ -57,11 +57,14 @@
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    background-color: hsl(225 25% 12%);
   }
 
   body {
     @apply bg-background text-foreground antialiased;
     letter-spacing: -0.01em;
+    min-height: 100vh;
+    min-height: 100dvh;
   }
 }
 

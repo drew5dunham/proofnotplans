@@ -129,7 +129,7 @@ export default function UserProfile() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-background" style={{ paddingBottom: 'calc(7rem + env(safe-area-inset-bottom, 0px))' }}>
       <header className="sticky top-0 z-30 bg-background border-b border-border px-4 py-3 flex items-center gap-3">
         <button 
           onClick={() => navigate(-1)}
