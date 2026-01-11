@@ -11,6 +11,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
+import { useLockBodyScroll } from '@/hooks/useLockBodyScroll';
 
 interface CommentsDrawerProps {
   isOpen: boolean;
@@ -34,6 +35,9 @@ export function CommentsDrawer({
   const [newComment, setNewComment] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   const commentsEndRef = useRef<HTMLDivElement>(null);
+
+  // Prevent iOS from scrolling the whole document when the keyboard opens.
+  useLockBodyScroll(isOpen);
 
   // Scroll to bottom when comments change
   useEffect(() => {
@@ -82,8 +86,6 @@ export function CommentsDrawer({
     <Drawer
       open={isOpen}
       onOpenChange={(open) => {
-        // Prevent background scroll issues on iOS when keyboard opens.
-        document.body.style.overflow = open ? 'hidden' : '';
         if (!open) onClose();
       }}
     >

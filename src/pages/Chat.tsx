@@ -10,7 +10,7 @@ import { format, isToday, isYesterday, differenceInMinutes } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import type { Message } from '@/hooks/useMessages';
+import { useLockBodyScroll } from '@/hooks/useLockBodyScroll';
 
 // Helper to group messages by time (5 min threshold)
 function shouldShowTimestamp(currentMsg: { created_at: string }, prevMsg?: { created_at: string }) {
@@ -36,6 +36,9 @@ export default function Chat() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+
+  // Prevent iOS from scrolling the whole document when the keyboard opens.
+  useLockBodyScroll(true);
   
   const friendNameFromUrl = searchParams.get('name') || 'Friend';
   
@@ -294,3 +297,4 @@ export default function Chat() {
     </div>
   );
 }
+
