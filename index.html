@@ -8,9 +8,17 @@
     <meta name="author" content="Proof" />
     <meta name="theme-color" content="#171B26" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <style>
-      html, body { background-color: #171B26; }
+      html, body { 
+        background-color: #171B26; 
+        margin: 0;
+        padding: 0;
+      }
+      html {
+        padding-top: env(safe-area-inset-top);
+        background-color: #171B26;
+      }
     </style>
 
     <meta property="og:title" content="Proof – Post Only What You Complete" />
