@@ -8,6 +8,7 @@ import { BottomNav } from '@/components/BottomNav';
 import { GoalProgressSection } from '@/components/GoalProgressSection';
 import { FriendsListDialog } from '@/components/FriendsListDialog';
 import { UserAvatar } from '@/components/UserAvatar';
+import { ActivityModal } from '@/components/ActivityModal';
 import { useAuth } from '@/hooks/useAuth';
 import type { GoalWithStats, DbCompletion } from '@/hooks/useGoals';
 
@@ -16,6 +17,7 @@ export default function UserProfile() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [avatarFullscreen, setAvatarFullscreen] = useState(false);
+  const [activityModalOpen, setActivityModalOpen] = useState(false);
   const isOwnProfile = !!userId && !!user?.id && user.id === userId;
 
   // Fetch user profile
@@ -224,9 +226,10 @@ export default function UserProfile() {
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
           ) : goalsWithStats.length > 0 ? (
-              <GoalProgressSection 
+          <GoalProgressSection 
                 goals={goalsWithStats} 
                 completions={completions || []}
+                onActivityClick={() => setActivityModalOpen(true)}
             />
           ) : (
             <div className="py-12 text-center">
@@ -237,6 +240,13 @@ export default function UserProfile() {
       </main>
 
       <BottomNav />
+
+      <ActivityModal 
+        open={activityModalOpen} 
+        onOpenChange={setActivityModalOpen}
+        completions={completions || []}
+        goals={goalsWithStats}
+      />
 
       {/* Fullscreen avatar modal */}
       <AnimatePresence>
