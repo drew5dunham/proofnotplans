@@ -153,6 +153,7 @@ export type Database = {
         Row: {
           category: string
           created_at: string
+          frequency: string
           id: string
           is_active: boolean
           name: string
@@ -162,6 +163,7 @@ export type Database = {
         Insert: {
           category: string
           created_at?: string
+          frequency?: string
           id?: string
           is_active?: boolean
           name: string
@@ -171,6 +173,7 @@ export type Database = {
         Update: {
           category?: string
           created_at?: string
+          frequency?: string
           id?: string
           is_active?: boolean
           name?: string

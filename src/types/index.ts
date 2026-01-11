@@ -1,5 +1,7 @@
 export type Category = 'fitness' | 'learning' | 'creative' | 'health' | 'work' | 'personal';
 
+export type Frequency = 'daily' | 'weekly' | 'monthly';
+
 export interface Goal {
   id: string;
   name: string;
