@@ -11,6 +11,7 @@ import { GroupsSection } from '@/components/GroupsSection';
 import { FriendsListDialog } from '@/components/FriendsListDialog';
 import { AvatarUpload } from '@/components/AvatarUpload';
 import { MyGoalsModal } from '@/components/MyGoalsModal';
+import { ActivityModal } from '@/components/ActivityModal';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
@@ -21,6 +22,7 @@ export default function Profile() {
   const { profile, isLoading: profileLoading } = useProfile();
   const [pastGoalsOpen, setPastGoalsOpen] = useState(false);
   const [goalsModalOpen, setGoalsModalOpen] = useState(false);
+  const [activityModalOpen, setActivityModalOpen] = useState(false);
 
   const isLoading = goalsLoading || completionsLoading || profileLoading;
   const totalCompleted = completions?.length || 0;
@@ -166,7 +168,8 @@ export default function Profile() {
           ) : goalsWithStats.length > 0 ? (
             <GoalProgressSection 
               goals={goalsWithStats} 
-              completions={completions || []} 
+              completions={completions || []}
+              onActivityClick={() => setActivityModalOpen(true)}
             />
           ) : (
             <div className="py-12 text-center bg-card rounded-2xl">
@@ -215,6 +218,12 @@ export default function Profile() {
       <BottomNav />
       <Paywall />
       <MyGoalsModal open={goalsModalOpen} onOpenChange={setGoalsModalOpen} />
+      <ActivityModal 
+        open={activityModalOpen} 
+        onOpenChange={setActivityModalOpen}
+        completions={completions || []}
+        goals={goalsWithStats}
+      />
     </div>
   );
 }
