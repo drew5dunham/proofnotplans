@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Send, Loader2, ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,33 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useLockBodyScroll } from '@/hooks/useLockBodyScroll';
+
+// Hook for managing viewport height on iOS when keyboard opens
+function useVisualViewport() {
+  const [viewportHeight, setViewportHeight] = useState<number | null>(null);
+
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    if (!viewport) return;
+
+    const handleResize = () => {
+      setViewportHeight(viewport.height);
+    };
+
+    // Set initial value
+    handleResize();
+
+    viewport.addEventListener('resize', handleResize);
+    viewport.addEventListener('scroll', handleResize);
+
+    return () => {
+      viewport.removeEventListener('resize', handleResize);
+      viewport.removeEventListener('scroll', handleResize);
+    };
+  }, []);
+
+  return viewportHeight;
+}
 
 // Helper to group messages by time (5 min threshold)
 function shouldShowTimestamp(currentMsg: { created_at: string }, prevMsg?: { created_at: string }) {
@@ -65,33 +92,34 @@ export default function Chat() {
   const sendMessage = useSendMessage();
   const [newMessage, setNewMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  
+  // Track viewport height for iOS keyboard
+  const viewportHeight = useVisualViewport();
 
   // Scroll to bottom when messages change
-  useEffect(() => {
+  const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, []);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, scrollToBottom]);
 
   // Focus input on mount
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
 
-  // Handle iOS keyboard - scroll input into view when focused
+  // Scroll to bottom when keyboard opens (viewport shrinks)
   useEffect(() => {
-    const input = inputRef.current;
-    if (!input) return;
-
-    const handleFocus = () => {
-      // Small delay to let keyboard animation complete
-      setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-      }, 300);
-    };
-
-    input.addEventListener('focus', handleFocus);
-    return () => input.removeEventListener('focus', handleFocus);
-  }, []);
+    if (viewportHeight) {
+      // When viewport changes (keyboard opens/closes), scroll to bottom
+      setTimeout(scrollToBottom, 100);
+    }
+  }, [viewportHeight, scrollToBottom]);
 
   const handleSend = async () => {
     if (!newMessage.trim() || !friendId) return;
@@ -122,10 +150,11 @@ export default function Chat() {
 
   return (
     <div 
-      className="fixed inset-0 z-50 bg-background flex flex-col max-w-md mx-auto"
+      ref={containerRef}
+      className="fixed inset-x-0 top-0 z-50 bg-background flex flex-col max-w-md mx-auto"
       style={{
-        height: 'var(--app-height, 100dvh)',
-        minHeight: '-webkit-fill-available',
+        height: viewportHeight ? `${viewportHeight}px` : '100dvh',
+        maxHeight: viewportHeight ? `${viewportHeight}px` : '100dvh',
       }}
     >
       {/* iMessage-style Header - Absolutely fixed at top */}
