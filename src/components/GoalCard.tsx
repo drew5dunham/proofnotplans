@@ -1,7 +1,8 @@
 import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Check, X, Camera, Type, Loader2, Image, Clock } from 'lucide-react';
+import { Check, X, Camera, Type, Loader2, Image, Clock, Trash2 } from 'lucide-react';
 import { CategoryIcon, getCategoryLabel } from './CategoryIcon';
+import { ConfirmDeleteDialog } from './ConfirmDeleteDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useGoals, DbGoal, GoalWithStats } from '@/hooks/useGoals';
 import { useTodayCompletions } from '@/hooks/useTodayCompletions';
@@ -33,6 +34,7 @@ export function GoalCard({ goal, showStats = false }: GoalCardProps) {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [showPhotoOptions, setShowPhotoOptions] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const { removeGoal, completeGoal } = useGoals();
@@ -42,6 +44,11 @@ export function GoalCard({ goal, showStats = false }: GoalCardProps) {
   const goalWithStats = goal as GoalWithStats;
   const hasStats = 'completionCount' in goal;
   const isReportedToday = todayCompletedGoalIds.has(goal.id);
+
+  const handleDeleteGoal = () => {
+    removeGoal(goal.id);
+    setConfirmDelete(false);
+  };
 
   const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -206,10 +213,10 @@ export function GoalCard({ goal, showStats = false }: GoalCardProps) {
             </div>
           </div>
           <button
-            onClick={() => removeGoal(goal.id)}
+            onClick={() => setConfirmDelete(true)}
             className="p-2 text-muted-foreground hover:text-destructive transition-colors rounded-lg hover:bg-destructive/10"
           >
-            <X size={16} />
+            <Trash2 size={16} />
           </button>
         </div>
 
@@ -442,6 +449,14 @@ export function GoalCard({ goal, showStats = false }: GoalCardProps) {
           </div>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDeleteDialog
+        open={confirmDelete}
+        onOpenChange={setConfirmDelete}
+        onConfirm={handleDeleteGoal}
+        itemName={goal.name}
+        description={`Are you sure you want to delete "${goal.name}"? This will deactivate the goal.`}
+      />
     </>
   );
 }

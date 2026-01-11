@@ -5,23 +5,13 @@ import { Heart, MessageCircle, Check, X, ThumbsUp, Flame, Trash2, Lock } from 'l
 import { CategoryIcon, getCategoryLabel } from './CategoryIcon';
 import { CommentsDrawer } from './CommentsDrawer';
 import { UserAvatar } from './UserAvatar';
+import { ConfirmDeleteDialog } from './ConfirmDeleteDialog';
 import { useCommentCount } from '@/hooks/useComments';
 import { useHasPostedToday } from '@/hooks/useHasPostedToday';
 import { formatDistanceToNow } from 'date-fns';
 import type { Category } from '@/types';
 import type { DbCompletion } from '@/hooks/useGoals';
 import { toast } from '@/hooks/use-toast';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
 
 interface FeedPostProps {
   post: DbCompletion;
@@ -37,6 +27,7 @@ export function FeedPost({ post, index, autoOpenComments = false, currentUserId,
   const [likeCount, setLikeCount] = useState(0);
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [imageFullscreen, setImageFullscreen] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const postRef = useRef<HTMLElement>(null);
   const navigate = useNavigate();
   const { data: commentCount } = useCommentCount(post.id);
@@ -131,31 +122,12 @@ export function FeedPost({ post, index, autoOpenComments = false, currentUserId,
             )}
           </div>
           {isOwnPost && (
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <button className="p-1.5 text-muted-foreground hover:text-destructive transition-colors rounded-md hover:bg-destructive/10">
-                  <Trash2 size={16} />
-                </button>
-              </AlertDialogTrigger>
-              <AlertDialogContent className="w-[calc(100%-2rem)] max-w-md rounded-2xl">
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Delete this post?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This action cannot be undone. This will permanently delete your post and remove it from the feed.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter className="flex-row gap-2">
-                  <AlertDialogCancel className="flex-1 mt-0">Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={handleDelete}
-                    disabled={isDeleting}
-                    className="flex-1 bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                  >
-                    {isDeleting ? 'Deleting...' : 'Delete'}
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+            <button 
+              onClick={() => setConfirmDelete(true)}
+              className="p-1.5 text-muted-foreground hover:text-destructive transition-colors rounded-md hover:bg-destructive/10"
+            >
+              <Trash2 size={16} />
+            </button>
           )}
         </div>
       </div>
@@ -289,6 +261,19 @@ export function FeedPost({ post, index, autoOpenComments = false, currentUserId,
         completionId={post.id}
         postAuthorId={post.user_id}
         goalName={goalName}
+      />
+
+      {/* Delete Confirmation */}
+      <ConfirmDeleteDialog
+        open={confirmDelete}
+        onOpenChange={setConfirmDelete}
+        onConfirm={() => {
+          onDelete?.(post.id);
+          setConfirmDelete(false);
+        }}
+        title="Delete this post?"
+        description="This action cannot be undone. This will permanently delete your post and remove it from the feed."
+        isDeleting={isDeleting}
       />
     </motion.article>
   );

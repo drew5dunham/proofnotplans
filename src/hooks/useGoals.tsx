@@ -189,6 +189,27 @@ export function useGoals() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['goals'] });
       queryClient.invalidateQueries({ queryKey: ['goals-with-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['inactive-goals-with-stats'] });
+    },
+  });
+
+  const toggleGoalActiveMutation = useMutation({
+    mutationFn: async ({ goalId, isActive }: { goalId: string; isActive: boolean }) => {
+      const { error } = await supabase
+        .from('goals')
+        .update({ is_active: isActive })
+        .eq('id', goalId);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['goals'] });
+      queryClient.invalidateQueries({ queryKey: ['goals-with-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['inactive-goals-with-stats'] });
+      toast({ title: 'Goal updated!' });
+    },
+    onError: () => {
+      toast({ title: 'Failed to update goal', variant: 'destructive' });
     },
   });
 
@@ -277,9 +298,12 @@ export function useGoals() {
     isLoadingInactive: inactiveGoalsWithStatsQuery.isLoading,
     addGoal: addGoalMutation.mutate,
     removeGoal: removeGoalMutation.mutate,
+    toggleGoalActive: (goalId: string, isActive: boolean) => 
+      toggleGoalActiveMutation.mutate({ goalId, isActive }),
     completeGoal: completeGoalMutation.mutate,
     deleteCompletion: deleteCompletionMutation.mutate,
     isAdding: addGoalMutation.isPending,
+    isToggling: toggleGoalActiveMutation.isPending,
     isCompleting: completeGoalMutation.isPending,
     isDeleting: deleteCompletionMutation.isPending,
   };
