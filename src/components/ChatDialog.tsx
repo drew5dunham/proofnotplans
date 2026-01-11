@@ -62,9 +62,9 @@ export function ChatDialog({ friendId, friendName, onClose, initialEncouragement
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-background flex flex-col max-w-md mx-auto">
+    <div className="fixed inset-0 z-50 bg-background flex flex-col max-w-md mx-auto" style={{ height: 'var(--app-height, 100dvh)' }}>
       {/* Header */}
-      <header className="border-b border-border px-4 py-3 flex items-center gap-3">
+      <header className="border-b border-border px-4 py-3 flex items-center gap-3" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
         <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">
           <ArrowLeft size={18} />
         </Button>
@@ -73,7 +73,7 @@ export function ChatDialog({ friendId, friendName, onClose, initialEncouragement
       </header>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      <div className="flex-1 overflow-y-auto p-4 space-y-3 overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
         {isLoading ? (
           <div className="flex justify-center py-8">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -144,7 +144,7 @@ export function ChatDialog({ friendId, friendName, onClose, initialEncouragement
       </div>
 
       {/* Input */}
-      <div className="border-t border-border p-4">
+      <div className="border-t border-border p-4" style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 16px)' }}>
         <div className="flex gap-2">
           <Input
             ref={inputRef}
@@ -154,8 +154,8 @@ export function ChatDialog({ friendId, friendName, onClose, initialEncouragement
             onKeyDown={handleKeyDown}
             className="flex-1"
           />
-          <Button 
-            onClick={handleSend} 
+          <Button
+            onClick={handleSend}
             disabled={!newMessage.trim() || sendMessage.isPending}
             size="icon"
           >

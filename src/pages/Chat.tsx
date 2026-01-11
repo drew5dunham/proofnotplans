@@ -120,9 +120,9 @@ export default function Chat() {
   return (
     <div 
       className="fixed inset-0 z-50 bg-background flex flex-col max-w-md mx-auto"
-      style={{ 
-        height: 'calc(100dvh)',
-        minHeight: '-webkit-fill-available'
+      style={{
+        height: 'var(--app-height, 100dvh)',
+        minHeight: '-webkit-fill-available',
       }}
     >
       {/* iMessage-style Header - Absolutely fixed at top */}
