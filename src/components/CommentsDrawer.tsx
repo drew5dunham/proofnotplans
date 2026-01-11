@@ -79,8 +79,21 @@ export function CommentsDrawer({
   };
 
   return (
-    <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DrawerContent className="max-h-[85vh] max-w-md mx-auto">
+    <Drawer
+      open={isOpen}
+      onOpenChange={(open) => {
+        // Prevent background scroll issues on iOS when keyboard opens.
+        document.body.style.overflow = open ? 'hidden' : '';
+        if (!open) onClose();
+      }}
+    >
+      <DrawerContent
+        className="max-w-md mx-auto flex flex-col"
+        style={{
+          // Use VisualViewport-aware height to avoid the whole UI jumping off-screen when the keyboard opens.
+          maxHeight: 'min(85vh, calc(var(--app-height, 100dvh) - 24px))',
+        }}
+      >
         <DrawerHeader className="border-b border-border pb-3">
           <div className="flex items-center justify-between">
             <DrawerTitle className="text-base">Comments</DrawerTitle>
@@ -91,7 +104,7 @@ export function CommentsDrawer({
           <p className="text-sm text-muted-foreground truncate">{goalName}</p>
         </DrawerHeader>
 
-        <div className="flex-1 overflow-y-auto p-4 min-h-[200px] max-h-[50vh]">
+        <div className="flex-1 overflow-y-auto p-4 overscroll-contain">
           {isLoading ? (
             <div className="flex justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -106,10 +119,10 @@ export function CommentsDrawer({
                     animate={{ opacity: 1, y: 0 }}
                     className="flex gap-3"
                   >
-                    <UserAvatar 
-                      name={comment.profiles?.name} 
-                      avatarUrl={comment.profiles?.avatar_url} 
-                      size="sm" 
+                    <UserAvatar
+                      name={comment.profiles?.name}
+                      avatarUrl={comment.profiles?.avatar_url}
+                      size="sm"
                     />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-baseline gap-2">
@@ -138,7 +151,10 @@ export function CommentsDrawer({
         </div>
 
         {/* Comment input */}
-        <div className="border-t border-border p-4">
+        <div
+          className="border-t border-border p-4"
+          style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 16px)' }}
+        >
           {!hasPostedToday ? (
             <div className="flex items-center justify-center gap-2 text-muted-foreground text-sm py-2">
               <Lock size={14} />
@@ -158,8 +174,8 @@ export function CommentsDrawer({
                 maxLength={500}
                 className="flex-1"
               />
-              <Button 
-                onClick={handleSubmit} 
+              <Button
+                onClick={handleSubmit}
                 disabled={!newComment.trim() || addComment.isPending}
                 size="icon"
               >
