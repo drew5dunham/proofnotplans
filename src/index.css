@@ -66,6 +66,12 @@
     min-height: 100vh;
     min-height: 100dvh;
   }
+
+  #root {
+    background-color: hsl(var(--background));
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
 }
 
 @layer components {
