@@ -7,6 +7,7 @@ import { useMessages, useSendMessage } from '@/hooks/useMessages';
 import { useAuth } from '@/hooks/useAuth';
 import { formatDistanceToNow } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useLockBodyScroll } from '@/hooks/useLockBodyScroll';
 
 interface ChatDialogProps {
   friendId: string;
@@ -26,6 +27,9 @@ export function ChatDialog({ friendId, friendName, onClose, initialEncouragement
   const [newMessage, setNewMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Prevent iOS from scrolling the whole document when the keyboard opens.
+  useLockBodyScroll(true);
 
   // Scroll to bottom when messages change
   useEffect(() => {
