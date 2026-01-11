@@ -18,9 +18,10 @@ type TimeFrame = 'week' | 'month' | 'all';
 interface GoalProgressSectionProps {
   goals: GoalWithStats[];
   completions: DbCompletion[];
+  onActivityClick?: () => void;
 }
 
-export function GoalProgressSection({ goals, completions }: GoalProgressSectionProps) {
+export function GoalProgressSection({ goals, completions, onActivityClick }: GoalProgressSectionProps) {
   const [timeFrame, setTimeFrame] = useState<TimeFrame>('week');
 
   const getDateRange = (tf: TimeFrame) => {
@@ -208,16 +209,20 @@ export function GoalProgressSection({ goals, completions }: GoalProgressSectionP
         </motion.div>
       </div>
 
-      {/* Calendar Heatmap */}
-      <motion.div
+      {/* Calendar Heatmap - Clickable */}
+      <motion.button
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        className="p-3 bg-card border border-border"
+        onClick={onActivityClick}
+        className="w-full p-3 bg-card border border-border text-left cursor-pointer hover:bg-muted/50 transition-colors rounded-lg"
       >
-        <div className="flex items-center gap-2 mb-3">
-          <Calendar size={14} className="text-muted-foreground" />
-          <span className="text-xs font-medium">Activity</span>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Calendar size={14} className="text-muted-foreground" />
+            <span className="text-xs font-medium">Activity</span>
+          </div>
+          <span className="text-[10px] text-muted-foreground">Tap to expand</span>
         </div>
         <div className="flex flex-wrap gap-1">
           {calendarData.map((day, i) => (
@@ -241,7 +246,7 @@ export function GoalProgressSection({ goals, completions }: GoalProgressSectionP
           <div className="w-2 h-2 rounded-sm bg-accent" />
           <span>More</span>
         </div>
-      </motion.div>
+      </motion.button>
 
       {/* Weekly Trends Chart */}
       {weeklyTrendData.length > 1 && (
