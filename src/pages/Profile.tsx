@@ -10,6 +10,7 @@ import { GoalProgressSection } from '@/components/GoalProgressSection';
 import { GroupsSection } from '@/components/GroupsSection';
 import { FriendsListDialog } from '@/components/FriendsListDialog';
 import { AvatarUpload } from '@/components/AvatarUpload';
+import { MyGoalsModal } from '@/components/MyGoalsModal';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
@@ -19,6 +20,7 @@ export default function Profile() {
   const { data: completions, isLoading: completionsLoading } = useCompletions();
   const { profile, isLoading: profileLoading } = useProfile();
   const [pastGoalsOpen, setPastGoalsOpen] = useState(false);
+  const [goalsModalOpen, setGoalsModalOpen] = useState(false);
 
   const isLoading = goalsLoading || completionsLoading || profileLoading;
   const totalCompleted = completions?.length || 0;
@@ -112,18 +114,19 @@ export default function Profile() {
                 <span className="text-xs text-muted-foreground">streak</span>
               </motion.div>
 
-              <motion.div
+              <motion.button
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.15 }}
-                className="stat-block"
+                onClick={() => setGoalsModalOpen(true)}
+                className="stat-block cursor-pointer hover:bg-muted/80 transition-colors"
               >
                 <div className="flex items-center gap-1 text-primary mb-1">
                   <Target size={18} />
                 </div>
                 <span className="text-2xl font-bold">{goalsWithStats.length}</span>
                 <span className="text-xs text-muted-foreground">goals</span>
-              </motion.div>
+              </motion.button>
 
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
@@ -211,6 +214,7 @@ export default function Profile() {
 
       <BottomNav />
       <Paywall />
+      <MyGoalsModal open={goalsModalOpen} onOpenChange={setGoalsModalOpen} />
     </div>
   );
 }

@@ -6,6 +6,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { useConversations, useUnreadConversationCount } from '@/hooks/useConversations';
 import { useNotifications, useUnreadNotificationCount, useMarkNotificationRead, useDeleteNotification } from '@/hooks/useComments';
 import { useAcceptFriendRequest, useIgnoreFriendRequest } from '@/hooks/useFriendRequests';
@@ -21,6 +22,7 @@ interface HeaderProps {
 export function Header({ title, rightAction }: HeaderProps) {
   const navigate = useNavigate();
   const [popoverOpen, setPopoverOpen] = useState(false);
+  const [confirmDeleteNotif, setConfirmDeleteNotif] = useState<string | null>(null);
   const { data: conversations, isLoading: loadingConversations } = useConversations();
   const { data: unreadConversationCount } = useUnreadConversationCount();
   const { data: notifications, isLoading: loadingNotifications } = useNotifications();
@@ -76,8 +78,14 @@ export function Header({ title, rightAction }: HeaderProps) {
 
   const handleDeleteNotification = async (e: React.MouseEvent, notifId: string) => {
     e.stopPropagation();
+    setConfirmDeleteNotif(notifId);
+  };
+
+  const confirmDeleteNotification = async () => {
+    if (!confirmDeleteNotif) return;
     try {
-      await deleteNotification.mutateAsync(notifId);
+      await deleteNotification.mutateAsync(confirmDeleteNotif);
+      setConfirmDeleteNotif(null);
     } catch (error) {
       toast.error('Failed to delete notification');
     }
@@ -256,6 +264,14 @@ export function Header({ title, rightAction }: HeaderProps) {
         </div>
         {rightAction && <div>{rightAction}</div>}
       </div>
+
+      <ConfirmDeleteDialog
+        open={!!confirmDeleteNotif}
+        onOpenChange={() => setConfirmDeleteNotif(null)}
+        onConfirm={confirmDeleteNotification}
+        itemName="this notification"
+        isDeleting={deleteNotification.isPending}
+      />
     </header>
   );
 }
