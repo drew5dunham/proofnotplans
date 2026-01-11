@@ -95,7 +95,10 @@ export function Header({ title, rightAction }: HeaderProps) {
   const isLoading = loadingConversations || loadingNotifications;
 
   return (
-    <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-xl border-b border-border/50">
+    <header
+      className="sticky top-0 z-30 bg-background border-b border-border/50"
+      style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+    >
       <div className="max-w-md mx-auto px-4 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
