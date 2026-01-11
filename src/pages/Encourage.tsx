@@ -11,6 +11,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ReportGoalDialog } from '@/components/ReportGoalDialog';
 import { UserAvatar } from '@/components/UserAvatar';
 import { AddFriendsPrompt } from '@/components/AddFriendsPrompt';
+import { SwipeableConversation } from '@/components/SwipeableConversation';
+import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { useAuth } from '@/hooks/useAuth';
 import { useGoals } from '@/hooks/useGoals';
 import { useHasPostedToday } from '@/hooks/useHasPostedToday';
@@ -18,10 +20,9 @@ import {
   useAllFriends, 
   useSendEncouragement
 } from '@/hooks/useEncouragements';
-import { useConversations, useUnreadConversationCount } from '@/hooks/useConversations';
+import { useConversations, useUnreadConversationCount, useDeleteConversation } from '@/hooks/useConversations';
 import { toast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
-import { formatDistanceToNow } from 'date-fns';
 
 const QUICK_EMOJIS = ['🔥', '💪', '❤️', '⭐', '🚀'];
 
@@ -35,12 +36,14 @@ export default function Encourage() {
   const { data: friends, isLoading: loadingFriends } = useAllFriends();
   const { data: conversations, isLoading: loadingConversations } = useConversations();
   const { data: unreadCount } = useUnreadConversationCount();
+  const deleteConversation = useDeleteConversation();
   const sendEncouragement = useSendEncouragement();
   
   const [selectedFriends, setSelectedFriends] = useState<Set<string>>(new Set());
   const [selectedEmoji, setSelectedEmoji] = useState<string | null>(null);
   const [customMessage, setCustomMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ friendId: string; friendName: string } | null>(null);
 
   const toggleFriend = (friendId: string) => {
     setSelectedFriends(prev => {
@@ -307,41 +310,12 @@ export default function Encourage() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.05 }}
-                    onClick={() => openChat(conv.friendId, conv.friendName)}
-                    className={`p-4 rounded-2xl cursor-pointer transition-colors hover:bg-muted ${
-                      conv.unreadCount > 0 
-                        ? 'bg-primary/10' 
-                        : 'bg-card'
-                    }`}
                   >
-                    <div className="flex items-center gap-3">
-                      <UserAvatar 
-                        name={conv.friendName} 
-                        avatarUrl={conv.friendAvatarUrl} 
-                        size="md" 
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <p className="font-semibold text-sm truncate">
-                            {conv.friendName}
-                          </p>
-                          <p className="text-xs text-muted-foreground shrink-0">
-                            {formatDistanceToNow(new Date(conv.lastMessageAt), { addSuffix: false })}
-                          </p>
-                        </div>
-                        <div className="flex items-center justify-between mt-0.5">
-                          <p className="text-sm text-muted-foreground truncate">
-                            {conv.isFromMe && <span className="text-muted-foreground/70">You: </span>}
-                            {conv.lastMessage}
-                          </p>
-                          {conv.unreadCount > 0 && (
-                            <span className="ml-2 h-5 min-w-5 px-1.5 bg-primary text-primary-foreground text-[10px] font-bold rounded-full flex items-center justify-center shrink-0">
-                              {conv.unreadCount}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
+                    <SwipeableConversation
+                      conversation={conv}
+                      onTap={() => openChat(conv.friendId, conv.friendName)}
+                      onDelete={() => setDeleteTarget({ friendId: conv.friendId, friendName: conv.friendName })}
+                    />
                   </motion.div>
                 ))}
               </div>
@@ -352,6 +326,23 @@ export default function Encourage() {
 
       <BottomNav />
       <Paywall />
+      
+      {/* Delete Conversation Confirmation */}
+      <ConfirmDeleteDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        title="Delete Conversation"
+        description={`Are you sure you want to delete your conversation with ${deleteTarget?.friendName}? This will delete all messages.`}
+        onConfirm={async () => {
+          if (deleteTarget) {
+            await deleteConversation.mutateAsync(deleteTarget.friendId);
+            toast({
+              title: "Conversation deleted",
+              description: "All messages have been removed."
+            });
+          }
+        }}
+      />
     </div>
   );
 }
