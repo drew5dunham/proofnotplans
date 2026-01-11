@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,7 +14,7 @@ import { Loader2 } from 'lucide-react';
 interface ConfirmDeleteDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onConfirm: () => void;
+  onConfirm: () => void | Promise<void>;
   title?: string;
   description?: string;
   itemName?: string;
@@ -27,11 +28,26 @@ export function ConfirmDeleteDialog({
   title,
   description,
   itemName,
-  isDeleting = false,
+  isDeleting: externalIsDeleting,
 }: ConfirmDeleteDialogProps) {
+  const [internalIsDeleting, setInternalIsDeleting] = useState(false);
+  const isDeleting = externalIsDeleting ?? internalIsDeleting;
+
   const displayTitle = title || `Delete ${itemName || 'this item'}?`;
   const displayDescription = description || 
     `Are you sure you want to delete ${itemName ? `"${itemName}"` : 'this'}? This action cannot be undone.`;
+
+  const handleConfirm = async () => {
+    setInternalIsDeleting(true);
+    try {
+      await onConfirm();
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Delete failed:', error);
+    } finally {
+      setInternalIsDeleting(false);
+    }
+  };
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -47,7 +63,7 @@ export function ConfirmDeleteDialog({
           <AlertDialogAction
             onClick={(e) => {
               e.preventDefault();
-              onConfirm();
+              handleConfirm();
             }}
             disabled={isDeleting}
             className="flex-1 bg-destructive text-destructive-foreground hover:bg-destructive/90"
