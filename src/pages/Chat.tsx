@@ -14,29 +14,32 @@ import { useLockBodyScroll } from '@/hooks/useLockBodyScroll';
 
 // Hook for managing viewport height on iOS when keyboard opens
 function useVisualViewport() {
-  const [viewportHeight, setViewportHeight] = useState<number | null>(null);
+  const [viewport, setViewport] = useState<{ height: number; offsetTop: number } | null>(null);
 
   useEffect(() => {
-    const viewport = window.visualViewport;
-    if (!viewport) return;
+    const vv = window.visualViewport;
+    if (!vv) return;
 
     const handleResize = () => {
-      setViewportHeight(viewport.height);
+      setViewport({
+        height: vv.height,
+        offsetTop: vv.offsetTop,
+      });
     };
 
     // Set initial value
     handleResize();
 
-    viewport.addEventListener('resize', handleResize);
-    viewport.addEventListener('scroll', handleResize);
+    vv.addEventListener('resize', handleResize);
+    vv.addEventListener('scroll', handleResize);
 
     return () => {
-      viewport.removeEventListener('resize', handleResize);
-      viewport.removeEventListener('scroll', handleResize);
+      vv.removeEventListener('resize', handleResize);
+      vv.removeEventListener('scroll', handleResize);
     };
   }, []);
 
-  return viewportHeight;
+  return viewport;
 }
 
 // Helper to group messages by time (5 min threshold)
@@ -96,8 +99,8 @@ export default function Chat() {
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   
-  // Track viewport height for iOS keyboard
-  const viewportHeight = useVisualViewport();
+  // Track viewport for iOS keyboard
+  const viewport = useVisualViewport();
 
   // Scroll to bottom when messages change
   const scrollToBottom = useCallback(() => {
@@ -115,11 +118,11 @@ export default function Chat() {
 
   // Scroll to bottom when keyboard opens (viewport shrinks)
   useEffect(() => {
-    if (viewportHeight) {
+    if (viewport) {
       // When viewport changes (keyboard opens/closes), scroll to bottom
       setTimeout(scrollToBottom, 100);
     }
-  }, [viewportHeight, scrollToBottom]);
+  }, [viewport, scrollToBottom]);
 
   const handleSend = async () => {
     if (!newMessage.trim() || !friendId) return;
@@ -149,32 +152,42 @@ export default function Chat() {
   };
 
   return (
-    <div 
-      ref={containerRef}
-      className="fixed inset-x-0 top-0 z-50 bg-background flex flex-col max-w-md mx-auto"
-      style={{
-        height: viewportHeight ? `${viewportHeight}px` : '100dvh',
-        maxHeight: viewportHeight ? `${viewportHeight}px` : '100dvh',
-      }}
-    >
-      {/* iMessage-style Header - Absolutely fixed at top */}
-      <header 
-        className="shrink-0 bg-card/80 backdrop-blur-lg border-b border-border px-2 py-2 flex items-center gap-2 z-10"
-        style={{ paddingTop: 'env(safe-area-inset-top)' }}
+    <>
+      {/* Background that extends behind status bar */}
+      <div 
+        className="fixed inset-0 bg-background z-40"
+        style={{
+          top: viewport?.offsetTop ? `-${viewport.offsetTop}px` : 0,
+        }}
+      />
+      
+      <div 
+        ref={containerRef}
+        className="fixed inset-x-0 z-50 bg-background flex flex-col max-w-md mx-auto"
+        style={{
+          top: viewport?.offsetTop ?? 0,
+          height: viewport?.height ?? '100dvh',
+          maxHeight: viewport?.height ?? '100dvh',
+        }}
       >
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={handleBack} 
-          className="h-9 px-2 text-primary hover:bg-transparent"
+        {/* iMessage-style Header - Fixed at top */}
+        <header 
+          className="shrink-0 bg-background border-b border-border px-2 py-3 flex items-center gap-2 z-10"
+          style={{ paddingTop: 'max(env(safe-area-inset-top), 8px)' }}
         >
-          <ChevronLeft size={28} strokeWidth={2.5} />
-        </Button>
-        <div className="flex-1 flex flex-col items-center -ml-8">
-          <UserAvatar name={friendName} avatarUrl={friendAvatarUrl} size="sm" />
-          <span className="text-xs font-medium mt-0.5">{friendName}</span>
-        </div>
-      </header>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={handleBack} 
+            className="h-9 px-2 text-primary hover:bg-transparent"
+          >
+            <ChevronLeft size={28} strokeWidth={2.5} />
+          </Button>
+          <div className="flex-1 flex flex-col items-center -ml-8">
+            <UserAvatar name={friendName} avatarUrl={friendAvatarUrl} size="sm" />
+            <span className="text-xs font-medium mt-1">{friendName}</span>
+          </div>
+        </header>
 
       {/* Messages Area - Scrollable middle section */}
       <div 
@@ -288,42 +301,43 @@ export default function Chat() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* iMessage-style Input - Fixed at bottom, uses env() for keyboard */}
-      <div 
-        className="shrink-0 bg-card/80 backdrop-blur-lg border-t border-border p-2"
-        style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 8px)' }}
-      >
-        <div className="flex items-center gap-2 bg-muted rounded-full px-4 py-1">
-          <Input
-            ref={inputRef}
-            placeholder="iMessage"
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            onKeyDown={handleKeyDown}
-            className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-0 py-2 text-[16px] placeholder:text-muted-foreground"
-          />
-          <Button
-            onClick={handleSend}
-            disabled={!newMessage.trim() || sendMessage.isPending}
-            size="icon"
-            className={`h-8 w-8 rounded-full shrink-0 transition-all ${
-              newMessage.trim() 
-                ? 'bg-primary text-primary-foreground' 
-                : 'bg-transparent text-muted-foreground'
-            }`}
-            variant="ghost"
-          >
-            {sendMessage.isPending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <svg viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
-                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
-              </svg>
-            )}
-          </Button>
+      {/* iMessage-style Input - Fixed at bottom */}
+        <div 
+          className="shrink-0 bg-background border-t border-border p-2"
+          style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 8px)' }}
+        >
+          <div className="flex items-center gap-2 bg-muted rounded-full px-4 py-1">
+            <Input
+              ref={inputRef}
+              placeholder="iMessage"
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              onKeyDown={handleKeyDown}
+              className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-0 py-2 text-[16px] placeholder:text-muted-foreground"
+            />
+            <Button
+              onClick={handleSend}
+              disabled={!newMessage.trim() || sendMessage.isPending}
+              size="icon"
+              className={`h-8 w-8 rounded-full shrink-0 transition-all ${
+                newMessage.trim() 
+                  ? 'bg-primary text-primary-foreground' 
+                  : 'bg-transparent text-muted-foreground'
+              }`}
+              variant="ghost"
+            >
+              {sendMessage.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <svg viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
+                  <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                </svg>
+              )}
+            </Button>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
