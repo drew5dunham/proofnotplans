@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, X, Loader2, Globe, Lock, Check, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Plus, X, Loader2, Globe, Lock, Check, ToggleLeft, ToggleRight, Calendar, CalendarDays, CalendarRange } from 'lucide-react';
 import { CategoryIcon, getCategoryLabel } from './CategoryIcon';
 import { useGoals, DbGoal, GoalWithStats } from '@/hooks/useGoals';
 import { ConfirmDeleteDialog } from './ConfirmDeleteDialog';
@@ -12,11 +12,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import type { Category } from '@/types';
+import type { Category, Frequency } from '@/types';
 
 const categories: Category[] = ['fitness', 'learning', 'creative', 'health', 'work', 'personal'];
 
 type Visibility = 'public' | 'private';
+
+const frequencies: { value: Frequency; label: string; icon: typeof Calendar }[] = [
+  { value: 'daily', label: 'Daily', icon: Calendar },
+  { value: 'weekly', label: 'Weekly', icon: CalendarDays },
+  { value: 'monthly', label: 'Monthly', icon: CalendarRange },
+];
 
 interface MyGoalsModalProps {
   open: boolean;
@@ -29,6 +35,7 @@ export function MyGoalsModal({ open, onOpenChange }: MyGoalsModalProps) {
   const [goalName, setGoalName] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<Category>('personal');
   const [visibility, setVisibility] = useState<Visibility>('public');
+  const [frequency, setFrequency] = useState<Frequency>('daily');
   const [confirmDeactivate, setConfirmDeactivate] = useState<GoalWithStats | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -36,12 +43,13 @@ export function MyGoalsModal({ open, onOpenChange }: MyGoalsModalProps) {
     if (!goalName.trim()) return;
 
     addGoal(
-      { name: goalName.trim(), category: selectedCategory, visibility },
+      { name: goalName.trim(), category: selectedCategory, visibility, frequency },
       {
         onSuccess: () => {
           setGoalName('');
           setSelectedCategory('personal');
           setVisibility('public');
+          setFrequency('daily');
           setShowAddForm(false);
         },
       }
@@ -70,7 +78,12 @@ export function MyGoalsModal({ open, onOpenChange }: MyGoalsModalProps) {
     setGoalName('');
     setSelectedCategory('personal');
     setVisibility('public');
+    setFrequency('daily');
     onOpenChange(false);
+  };
+
+  const getFrequencyLabel = (freq: Frequency) => {
+    return frequencies.find(f => f.value === freq)?.label || 'Daily';
   };
 
   return (
@@ -104,11 +117,14 @@ export function MyGoalsModal({ open, onOpenChange }: MyGoalsModalProps) {
                       >
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-sm truncate">{goal.name}</p>
-                          <div className="flex items-center gap-2 mt-1">
+                          <div className="flex items-center gap-2 mt-1 flex-wrap">
                             <div className="category-badge text-[10px]">
                               <CategoryIcon category={goal.category as Category} size={10} />
                               <span>{getCategoryLabel(goal.category as Category)}</span>
                             </div>
+                            <span className="text-[10px] text-muted-foreground">
+                              {getFrequencyLabel(goal.frequency)}
+                            </span>
                             {goal.visibility === 'private' && (
                               <Lock size={10} className="text-muted-foreground" />
                             )}
@@ -210,6 +226,27 @@ export function MyGoalsModal({ open, onOpenChange }: MyGoalsModalProps) {
                         >
                           <CategoryIcon category={cat} size={10} />
                           {getCategoryLabel(cat)}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-2">How often?</p>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {frequencies.map(({ value, label, icon: Icon }) => (
+                        <button
+                          key={value}
+                          type="button"
+                          onClick={() => setFrequency(value)}
+                          className={`p-2 rounded-lg text-xs font-medium flex flex-col items-center gap-1 transition-colors ${
+                            frequency === value
+                              ? 'bg-primary/20 text-primary'
+                              : 'bg-muted text-muted-foreground hover:text-foreground'
+                          }`}
+                        >
+                          <Icon size={12} />
+                          <span>{label}</span>
                         </button>
                       ))}
                     </div>

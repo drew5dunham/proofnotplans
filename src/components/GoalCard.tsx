@@ -1,11 +1,11 @@
 import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Check, X, Camera, Type, Loader2, Image, Clock, Trash2 } from 'lucide-react';
+import { Check, X, Camera, Type, Loader2, Image, Clock, Trash2, Calendar, CalendarDays, CalendarRange } from 'lucide-react';
 import { CategoryIcon, getCategoryLabel } from './CategoryIcon';
 import { ConfirmDeleteDialog } from './ConfirmDeleteDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useGoals, DbGoal, GoalWithStats } from '@/hooks/useGoals';
-import { useTodayCompletions } from '@/hooks/useTodayCompletions';
+import { usePeriodCompletions, getNextReportLabel } from '@/hooks/usePeriodCompletions';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
@@ -15,7 +15,19 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import type { Category } from '@/types';
+import type { Category, Frequency } from '@/types';
+
+const frequencyIcons: Record<Frequency, typeof Calendar> = {
+  daily: Calendar,
+  weekly: CalendarDays,
+  monthly: CalendarRange,
+};
+
+const frequencyLabels: Record<Frequency, string> = {
+  daily: 'Daily',
+  weekly: 'Weekly',
+  monthly: 'Monthly',
+};
 
 interface GoalCardProps {
   goal: DbGoal | GoalWithStats;
@@ -38,12 +50,14 @@ export function GoalCard({ goal, showStats = false }: GoalCardProps) {
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const { removeGoal, completeGoal } = useGoals();
-  const { todayCompletedGoalIds } = useTodayCompletions();
+  const { isCompletedThisPeriod } = usePeriodCompletions();
   const { toast } = useToast();
 
   const goalWithStats = goal as GoalWithStats;
   const hasStats = 'completionCount' in goal;
-  const isReportedToday = todayCompletedGoalIds.has(goal.id);
+  const frequency = (goal as GoalWithStats).frequency || 'daily';
+  const isReportedThisPeriod = isCompletedThisPeriod(goal.id);
+  const FrequencyIcon = frequencyIcons[frequency];
 
   const handleDeleteGoal = () => {
     removeGoal(goal.id);
@@ -207,9 +221,15 @@ export function GoalCard({ goal, showStats = false }: GoalCardProps) {
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1">
             <h3 className="font-semibold text-foreground leading-snug mb-2">{goal.name}</h3>
-            <div className="category-badge">
-              <CategoryIcon category={goal.category as Category} size={12} />
-              <span>{getCategoryLabel(goal.category as Category)}</span>
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="category-badge">
+                <CategoryIcon category={goal.category as Category} size={12} />
+                <span>{getCategoryLabel(goal.category as Category)}</span>
+              </div>
+              <div className="category-badge">
+                <FrequencyIcon size={12} />
+                <span>{frequencyLabels[frequency]}</span>
+              </div>
             </div>
           </div>
           <button
@@ -231,10 +251,10 @@ export function GoalCard({ goal, showStats = false }: GoalCardProps) {
           </div>
         )}
 
-        {isReportedToday ? (
+        {isReportedThisPeriod ? (
           <div className="mt-4 p-3 bg-muted/50 rounded-xl flex items-center gap-2 text-muted-foreground">
-            <Clock size={16} />
-            <span className="text-sm">Report progress on this goal again tomorrow</span>
+            <Check size={16} className="text-success" />
+            <span className="text-sm">{getNextReportLabel(frequency)}</span>
           </div>
         ) : (
           <div className="flex gap-2 mt-4">

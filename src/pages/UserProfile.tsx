@@ -113,6 +113,7 @@ export default function UserProfile() {
     return {
       ...goal,
       visibility: (goal.visibility || 'public') as 'public' | 'private',
+      frequency: (goal.frequency || 'daily') as import('@/types').Frequency,
       completionCount: completedCount,
       lastCompleted: lastCompleted || null,
     };

@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, X, Loader2, Globe, Lock } from 'lucide-react';
+import { Plus, X, Loader2, Globe, Lock, Calendar, CalendarDays, CalendarRange } from 'lucide-react';
 import { CategoryIcon, getCategoryLabel } from './CategoryIcon';
 import { useGoals } from '@/hooks/useGoals';
-import type { Category } from '@/types';
+import type { Category, Frequency } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useSearchParams } from 'react-router-dom';
@@ -12,6 +12,12 @@ const categories: Category[] = ['fitness', 'learning', 'creative', 'health', 'wo
 
 type Visibility = 'public' | 'private';
 
+const frequencies: { value: Frequency; label: string; icon: typeof Calendar }[] = [
+  { value: 'daily', label: 'Daily', icon: Calendar },
+  { value: 'weekly', label: 'Weekly', icon: CalendarDays },
+  { value: 'monthly', label: 'Monthly', icon: CalendarRange },
+];
+
 export function AddGoalForm() {
   const [searchParams, setSearchParams] = useSearchParams();
   const startOpen = searchParams.get('add') === 'true';
@@ -19,6 +25,7 @@ export function AddGoalForm() {
   const [goalName, setGoalName] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<Category>('personal');
   const [visibility, setVisibility] = useState<Visibility>('public');
+  const [frequency, setFrequency] = useState<Frequency>('daily');
   const { addGoal, isAdding, goals } = useGoals();
 
   // Clear the query param when form opens
@@ -33,12 +40,13 @@ export function AddGoalForm() {
     if (!goalName.trim()) return;
 
     addGoal(
-      { name: goalName.trim(), category: selectedCategory, visibility },
+      { name: goalName.trim(), category: selectedCategory, visibility, frequency },
       {
         onSuccess: () => {
           setGoalName('');
           setSelectedCategory('personal');
           setVisibility('public');
+          setFrequency('daily');
           setIsOpen(false);
         },
       }
@@ -102,6 +110,27 @@ export function AddGoalForm() {
             >
               <CategoryIcon category={cat} size={12} />
               {getCategoryLabel(cat)}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <p className="text-xs text-muted-foreground mb-2">How often?</p>
+        <div className="grid grid-cols-3 gap-2">
+          {frequencies.map(({ value, label, icon: Icon }) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setFrequency(value)}
+              className={`p-3 rounded-xl text-xs font-medium flex flex-col items-center gap-1.5 transition-colors ${
+                frequency === value
+                  ? 'bg-primary/20 text-primary'
+                  : 'bg-muted text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Icon size={16} />
+              <span>{label}</span>
             </button>
           ))}
         </div>

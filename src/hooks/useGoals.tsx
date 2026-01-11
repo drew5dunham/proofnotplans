@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
-import type { Category } from '@/types';
+import type { Category, Frequency } from '@/types';
 
 export interface DbGoal {
   id: string;
@@ -12,6 +12,7 @@ export interface DbGoal {
   is_active: boolean;
   created_at: string;
   visibility: 'public' | 'private';
+  frequency: Frequency;
 }
 
 export interface DbCompletion {
@@ -91,6 +92,7 @@ export function useGoals() {
         return {
           ...goal,
           visibility: (goal.visibility || 'public') as 'public' | 'private',
+          frequency: (goal.frequency || 'daily') as Frequency,
           completionCount: goalCompletions.length,
           lastCompleted: sortedCompletions[0]?.completed_at || null,
         };
@@ -139,6 +141,7 @@ export function useGoals() {
         return {
           ...goal,
           visibility: (goal.visibility || 'public') as 'public' | 'private',
+          frequency: (goal.frequency || 'daily') as Frequency,
           completionCount: goalCompletions.length,
           lastCompleted: sortedCompletions[0]?.completed_at || null,
         };
@@ -150,7 +153,7 @@ export function useGoals() {
   });
 
   const addGoalMutation = useMutation({
-    mutationFn: async ({ name, category, visibility = 'public' }: { name: string; category: Category; visibility?: 'public' | 'private' }) => {
+    mutationFn: async ({ name, category, visibility = 'public', frequency = 'daily' }: { name: string; category: Category; visibility?: 'public' | 'private'; frequency?: Frequency }) => {
       if (!user) throw new Error('Not authenticated');
       
       const { data, error } = await supabase
@@ -160,6 +163,7 @@ export function useGoals() {
           name,
           category,
           visibility,
+          frequency,
         })
         .select()
         .single();
