@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { sendPushNotification } from '@/lib/pushNotifications';
 
 export interface Message {
   id: string;
@@ -109,11 +110,45 @@ export function useSendMessage() {
       });
 
       if (error) throw error;
+
+      // Get sender's profile for push notification
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('name')
+        .eq('id', user.id)
+        .single();
+
+      const title = `Message from ${profile?.name || 'Someone'}`;
+      const body = data.content.length > 100 ? data.content.substring(0, 100) + '...' : data.content;
+
+      // Create notification record
+      const { data: notification } = await supabase
+        .from('notifications')
+        .insert({
+          user_id: data.recipient_id,
+          actor_id: user.id,
+          type: 'message',
+          title,
+          body,
+          reference_id: user.id // Sender's ID so we can navigate to the chat
+        })
+        .select('id')
+        .single();
+
+      // Send push notification with notification ID
+      sendPushNotification(
+        data.recipient_id, 
+        title, 
+        body, 
+        `/chat/${user.id}`,
+        notification?.id
+      );
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ 
         queryKey: ['messages', user?.id, variables.recipient_id] 
       });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
     }
   });
 }

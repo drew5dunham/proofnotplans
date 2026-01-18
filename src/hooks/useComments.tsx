@@ -163,17 +163,25 @@ export function useAddComment() {
         const title = `${profile?.name || 'Someone'} commented on your post`;
         const body = data.content.substring(0, 100);
 
-        await supabase.from('notifications').insert({
+        const { data: notification } = await supabase.from('notifications').insert({
           user_id: data.post_author_id,
           type: 'comment',
           title,
           body,
           reference_id: data.completion_id,
           actor_id: user.id
-        });
+        })
+        .select('id')
+        .single();
 
-        // Send push notification with post ID in URL
-        sendPushNotification(data.post_author_id, title, body, `/?post=${data.completion_id}`);
+        // Send push notification with notification ID and post reference
+        sendPushNotification(
+          data.post_author_id, 
+          title, 
+          body, 
+          `/?post=${data.completion_id}`,
+          notification?.id
+        );
       }
     },
     onSuccess: (_, variables) => {

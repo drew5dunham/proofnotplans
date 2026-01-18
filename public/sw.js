@@ -3,27 +3,39 @@
 self.addEventListener('push', function(event) {
   console.log('[SW] Push received:', event);
   
-  let data = { title: 'New Notification', body: 'You have a new notification' };
+  let data = { 
+    title: 'New Notification', 
+    body: 'You have a new notification',
+    url: '/',
+    notificationId: null
+  };
   
   if (event.data) {
     try {
-      data = event.data.json();
+      data = { ...data, ...event.data.json() };
     } catch (e) {
+      console.error('[SW] Error parsing push data:', e);
       data.body = event.data.text();
     }
   }
+  
+  console.log('[SW] Notification data:', data);
   
   const options = {
     body: data.body,
     icon: '/favicon.ico',
     badge: '/favicon.ico',
     vibrate: [100, 50, 100],
+    tag: data.notificationId || 'default',
+    renotify: true,
     data: {
       url: data.url || '/',
+      notificationId: data.notificationId,
       dateOfArrival: Date.now(),
     },
     actions: [
-      { action: 'open', title: 'Open App' }
+      { action: 'open', title: 'Open' },
+      { action: 'dismiss', title: 'Dismiss' }
     ]
   };
 
@@ -37,7 +49,21 @@ self.addEventListener('notificationclick', function(event) {
   
   event.notification.close();
 
-  const urlToOpen = event.notification.data?.url || '/';
+  // If dismiss action, just close
+  if (event.action === 'dismiss') {
+    return;
+  }
+
+  // Build the URL to open - always open notification center first
+  const notificationId = event.notification.data?.notificationId;
+  let urlToOpen = event.notification.data?.url || '/';
+  
+  // If we have a notification ID, open with notification center showing that notification
+  if (notificationId) {
+    // Add query param to indicate which notification to highlight
+    const separator = urlToOpen.includes('?') ? '&' : '?';
+    urlToOpen = `${urlToOpen}${separator}openNotification=${notificationId}`;
+  }
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(clientList) {
