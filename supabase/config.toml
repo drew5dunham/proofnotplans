@@ -5,3 +5,9 @@ verify_jwt = false
 
 [functions.send-push-notification]
 verify_jwt = false
+
+[functions.daily-goal-reminder]
+verify_jwt = false
+
+[functions.weekly-leaderboard-check]
+verify_jwt = false
