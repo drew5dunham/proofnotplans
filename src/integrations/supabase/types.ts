@@ -361,6 +361,42 @@ export type Database = {
         }
         Relationships: []
       }
+      user_settings: {
+        Row: {
+          created_at: string
+          daily_reminder_time: string | null
+          default_goal_visibility: string
+          friend_activity_notifications: boolean
+          id: string
+          profile_visibility: string
+          push_notifications_enabled: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          daily_reminder_time?: string | null
+          default_goal_visibility?: string
+          friend_activity_notifications?: boolean
+          id?: string
+          profile_visibility?: string
+          push_notifications_enabled?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          daily_reminder_time?: string | null
+          default_goal_visibility?: string
+          friend_activity_notifications?: boolean
+          id?: string
+          profile_visibility?: string
+          push_notifications_enabled?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
