@@ -332,25 +332,31 @@ export type Database = {
         Row: {
           auth: string
           created_at: string
+          device_token: string | null
           endpoint: string
           id: string
           p256dh: string
+          platform: string
           user_id: string
         }
         Insert: {
           auth: string
           created_at?: string
+          device_token?: string | null
           endpoint: string
           id?: string
           p256dh: string
+          platform?: string
           user_id: string
         }
         Update: {
           auth?: string
           created_at?: string
+          device_token?: string | null
           endpoint?: string
           id?: string
           p256dh?: string
+          platform?: string
           user_id?: string
         }
         Relationships: []

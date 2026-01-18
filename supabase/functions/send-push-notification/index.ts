@@ -25,7 +25,7 @@ function base64UrlDecode(str: string): Uint8Array {
   return outputArray;
 }
 
-// Generate VAPID JWT token
+// Generate VAPID JWT token for web push
 async function generateVapidJwt(
   audience: string,
   subject: string,
@@ -42,10 +42,8 @@ async function generateVapidJwt(
   const payloadB64 = base64UrlEncode(new TextEncoder().encode(JSON.stringify(payload)));
   const unsignedToken = `${headerB64}.${payloadB64}`;
 
-  // Import the private key
   const privateKeyBytes = base64UrlDecode(privateKeyBase64);
   
-  // Create PKCS8 format for the private key
   const pkcs8Prefix = new Uint8Array([
     0x30, 0x81, 0x87, 0x02, 0x01, 0x00, 0x30, 0x13,
     0x06, 0x07, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x02,
@@ -54,9 +52,6 @@ async function generateVapidJwt(
     0x01, 0x01, 0x04, 0x20
   ]);
   
-  const pkcs8Suffix = new Uint8Array([0xa1, 0x44, 0x03, 0x42, 0x00]);
-  
-  // We'll just sign with the raw key - this requires proper VAPID key format
   const cryptoKey = await crypto.subtle.importKey(
     'pkcs8',
     new Uint8Array([...pkcs8Prefix, ...privateKeyBytes]).buffer,
@@ -69,7 +64,6 @@ async function generateVapidJwt(
   });
 
   if (!cryptoKey) {
-    // If PKCS8 fails, return a placeholder - the notification will still work for FCM
     console.log('Could not import key for JWT signing');
     return '';
   }
@@ -80,11 +74,166 @@ async function generateVapidJwt(
     new TextEncoder().encode(unsignedToken)
   );
 
-  // Convert DER signature to raw format (r || s)
   const sigArray = new Uint8Array(signature);
   const signatureB64 = base64UrlEncode(sigArray.slice(0, 64));
   
   return `${unsignedToken}.${signatureB64}`;
+}
+
+// Generate APNs JWT token for iOS push
+async function generateApnsJwt(
+  keyId: string,
+  teamId: string,
+  privateKeyPem: string
+): Promise<string> {
+  const header = { 
+    alg: 'ES256', 
+    kid: keyId,
+    typ: 'JWT'
+  };
+  const payload = {
+    iss: teamId,
+    iat: Math.floor(Date.now() / 1000)
+  };
+
+  const headerB64 = base64UrlEncode(new TextEncoder().encode(JSON.stringify(header)));
+  const payloadB64 = base64UrlEncode(new TextEncoder().encode(JSON.stringify(payload)));
+  const unsignedToken = `${headerB64}.${payloadB64}`;
+
+  // Parse PEM key - extract base64 content between headers
+  const pemLines = privateKeyPem.split('\n').filter(line => 
+    !line.includes('-----BEGIN') && !line.includes('-----END') && line.trim()
+  );
+  const keyBase64 = pemLines.join('');
+  const keyData = Uint8Array.from(atob(keyBase64), c => c.charCodeAt(0));
+
+  try {
+    const cryptoKey = await crypto.subtle.importKey(
+      'pkcs8',
+      keyData.buffer,
+      { name: 'ECDSA', namedCurve: 'P-256' },
+      false,
+      ['sign']
+    );
+
+    const signature = await crypto.subtle.sign(
+      { name: 'ECDSA', hash: 'SHA-256' },
+      cryptoKey,
+      new TextEncoder().encode(unsignedToken)
+    );
+
+    // Convert DER signature to raw r||s format for JWT
+    const sigArray = new Uint8Array(signature);
+    let r: Uint8Array, s: Uint8Array;
+    
+    // Check if it's DER encoded
+    if (sigArray[0] === 0x30) {
+      // DER format: parse it
+      let offset = 2;
+      const rLength = sigArray[offset + 1];
+      offset += 2;
+      r = sigArray.slice(offset, offset + rLength);
+      offset += rLength;
+      const sLength = sigArray[offset + 1];
+      offset += 2;
+      s = sigArray.slice(offset, offset + sLength);
+      
+      // Remove leading zeros if present
+      if (r.length > 32 && r[0] === 0) r = r.slice(1);
+      if (s.length > 32 && s[0] === 0) s = s.slice(1);
+      
+      // Pad to 32 bytes if needed
+      if (r.length < 32) {
+        const padded = new Uint8Array(32);
+        padded.set(r, 32 - r.length);
+        r = padded;
+      }
+      if (s.length < 32) {
+        const padded = new Uint8Array(32);
+        padded.set(s, 32 - s.length);
+        s = padded;
+      }
+    } else {
+      // Already raw format
+      r = sigArray.slice(0, 32);
+      s = sigArray.slice(32, 64);
+    }
+
+    const rawSig = new Uint8Array(64);
+    rawSig.set(r, 0);
+    rawSig.set(s, 32);
+    
+    const signatureB64 = base64UrlEncode(rawSig);
+    return `${unsignedToken}.${signatureB64}`;
+  } catch (error) {
+    console.error('Error generating APNs JWT:', error);
+    throw error;
+  }
+}
+
+// Send push to iOS via APNs
+async function sendApnsPush(
+  deviceToken: string,
+  title: string,
+  body: string,
+  url: string,
+  apnsKeyId: string,
+  apnsTeamId: string,
+  apnsPrivateKey: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const jwt = await generateApnsJwt(apnsKeyId, apnsTeamId, apnsPrivateKey);
+    
+    // Use production APNs server
+    const apnsHost = 'https://api.push.apple.com';
+    const endpoint = `${apnsHost}/3/device/${deviceToken}`;
+    
+    const payload = {
+      aps: {
+        alert: {
+          title,
+          body
+        },
+        sound: 'default',
+        badge: 1,
+        'mutable-content': 1
+      },
+      url: url || '/'
+    };
+
+    console.log('Sending APNs push to:', deviceToken.substring(0, 20) + '...');
+
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'authorization': `bearer ${jwt}`,
+        'apns-topic': 'app.lovable.5a62f5101acb4e6ca4fa8dc3e6dc84d5',
+        'apns-push-type': 'alert',
+        'apns-priority': '10',
+        'apns-expiration': '0',
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (response.ok) {
+      console.log('APNs push sent successfully');
+      return { success: true };
+    } else {
+      const errorBody = await response.text();
+      console.error('APNs error:', response.status, errorBody);
+      
+      // 410 means the device token is no longer valid
+      if (response.status === 410) {
+        return { success: false, error: 'expired' };
+      }
+      
+      return { success: false, error: `${response.status}: ${errorBody}` };
+    }
+  } catch (error) {
+    console.error('APNs send error:', error);
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
 }
 
 serve(async (req) => {
@@ -101,21 +250,31 @@ serve(async (req) => {
     console.log('Body:', body);
     console.log('URL:', url);
 
+    // Web push config
     const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY');
     const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY');
+    
+    // APNs config
+    const apnsKeyId = Deno.env.get('APNS_KEY_ID');
+    const apnsTeamId = Deno.env.get('APNS_TEAM_ID');
+    const apnsPrivateKey = Deno.env.get('APNS_PRIVATE_KEY');
+    
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
-    if (!vapidPublicKey || !vapidPrivateKey) {
-      console.error('VAPID keys not configured');
+    const hasWebPush = vapidPublicKey && vapidPrivateKey;
+    const hasApns = apnsKeyId && apnsTeamId && apnsPrivateKey;
+
+    console.log('Web push configured:', hasWebPush);
+    console.log('APNs configured:', hasApns);
+
+    if (!hasWebPush && !hasApns) {
+      console.error('No push notification services configured');
       return new Response(
         JSON.stringify({ error: 'Push notifications not configured' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
-    console.log('VAPID public key available:', !!vapidPublicKey);
-    console.log('VAPID private key available:', !!vapidPrivateKey);
 
     const supabase = createClient(supabaseUrl!, supabaseServiceKey!);
 
@@ -143,68 +302,93 @@ serve(async (req) => {
 
     console.log(`Found ${subscriptions.length} subscription(s) for user`);
 
-    const payload = JSON.stringify({ 
-      title, 
-      body, 
-      url: url || '/',
-      notificationId: notificationId || null,
-      timestamp: Date.now()
-    });
-
     let successCount = 0;
     const errors: string[] = [];
 
     for (const sub of subscriptions) {
       try {
-        const endpoint = sub.endpoint;
-        console.log('Sending to endpoint:', endpoint.substring(0, 80) + '...');
+        const platform = sub.platform || 'web';
         
-        const audience = new URL(endpoint).origin;
-        
-        // Try to generate VAPID JWT
-        let vapidJwt = '';
-        try {
-          vapidJwt = await generateVapidJwt(
-            audience,
-            'mailto:support@proofnotplans.lovable.app',
-            vapidPrivateKey
+        if (platform === 'ios' && hasApns && sub.device_token) {
+          // Send to iOS via APNs
+          console.log('Sending iOS push notification...');
+          const result = await sendApnsPush(
+            sub.device_token,
+            title,
+            body,
+            url || '/',
+            apnsKeyId!,
+            apnsTeamId!,
+            apnsPrivateKey!
           );
-        } catch (e) {
-          console.log('JWT generation failed:', e);
-        }
+          
+          if (result.success) {
+            successCount++;
+          } else if (result.error === 'expired') {
+            console.log('iOS subscription expired, removing from database');
+            await supabase.from('push_subscriptions').delete().eq('id', sub.id);
+            errors.push(`iOS subscription ${sub.id} expired`);
+          } else {
+            errors.push(`iOS: ${result.error}`);
+          }
+        } else if (platform === 'web' && hasWebPush) {
+          // Send to web via Web Push
+          const endpoint = sub.endpoint;
+          console.log('Sending to web endpoint:', endpoint.substring(0, 80) + '...');
+          
+          const audience = new URL(endpoint).origin;
+          
+          let vapidJwt = '';
+          try {
+            vapidJwt = await generateVapidJwt(
+              audience,
+              'mailto:support@proofnotplans.lovable.app',
+              vapidPrivateKey!
+            );
+          } catch (e) {
+            console.log('JWT generation failed:', e);
+          }
 
-        // Build headers for push service
-        const headers: Record<string, string> = {
-          'Content-Type': 'application/json',
-          'TTL': '86400',
-        };
+          const headers: Record<string, string> = {
+            'Content-Type': 'application/json',
+            'TTL': '86400',
+          };
 
-        if (vapidJwt) {
-          headers['Authorization'] = `vapid t=${vapidJwt}, k=${vapidPublicKey}`;
-        }
+          if (vapidJwt) {
+            headers['Authorization'] = `vapid t=${vapidJwt}, k=${vapidPublicKey}`;
+          }
 
-        // Send to push service
-        // Note: This sends unencrypted - works for testing but production needs encryption
-        const response = await fetch(endpoint, {
-          method: 'POST',
-          headers,
-          body: payload
-        });
+          const payload = JSON.stringify({ 
+            title, 
+            body, 
+            url: url || '/',
+            notificationId: notificationId || null,
+            timestamp: Date.now()
+          });
 
-        const responseStatus = response.status;
-        console.log('Push response status:', responseStatus);
-        
-        if (response.ok || responseStatus === 201) {
-          successCount++;
-          console.log('Push sent successfully!');
-        } else if (responseStatus === 410 || responseStatus === 404) {
-          console.log('Subscription expired/invalid, removing from database');
-          await supabase.from('push_subscriptions').delete().eq('id', sub.id);
-          errors.push(`Subscription ${sub.id} expired`);
+          const response = await fetch(endpoint, {
+            method: 'POST',
+            headers,
+            body: payload
+          });
+
+          const responseStatus = response.status;
+          console.log('Web push response status:', responseStatus);
+          
+          if (response.ok || responseStatus === 201) {
+            successCount++;
+            console.log('Web push sent successfully!');
+          } else if (responseStatus === 410 || responseStatus === 404) {
+            console.log('Web subscription expired/invalid, removing from database');
+            await supabase.from('push_subscriptions').delete().eq('id', sub.id);
+            errors.push(`Web subscription ${sub.id} expired`);
+          } else {
+            const responseText = await response.text();
+            console.error('Web push failed:', responseStatus, responseText);
+            errors.push(`Web status ${responseStatus}: ${responseText.substring(0, 100)}`);
+          }
         } else {
-          const responseText = await response.text();
-          console.error('Push failed:', responseStatus, responseText);
-          errors.push(`Status ${responseStatus}: ${responseText.substring(0, 100)}`);
+          console.log(`Skipping subscription - platform: ${platform}, hasApns: ${hasApns}, hasWebPush: ${hasWebPush}`);
         }
       } catch (error) {
         const errorMsg = error instanceof Error ? error.message : 'Unknown error';

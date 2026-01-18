@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Bell, BellOff, X } from 'lucide-react';
-import { usePushNotifications } from '@/hooks/usePushNotifications';
+import { Bell, X } from 'lucide-react';
+import { useCombinedPushNotifications } from '@/hooks/useCombinedPushNotifications';
 import { toast } from 'sonner';
 
 export const PushNotificationPrompt = () => {
-  const { isSupported, isSubscribed, permission, subscribe, unsubscribe } = usePushNotifications();
+  const { isSupported, isSubscribed, permission, subscribe } = useCombinedPushNotifications();
   const [dismissed, setDismissed] = useState(false);
   const [loading, setLoading] = useState(false);
 
