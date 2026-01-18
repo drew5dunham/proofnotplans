@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Flame, Target, Check, LogOut, Loader2, Settings, ChevronDown, Archive } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
@@ -16,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 export default function Profile() {
+  const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { goalsWithStats, inactiveGoalsWithStats, isLoading: goalsLoading, isLoadingInactive } = useGoals();
   const { data: completions, isLoading: completionsLoading } = useCompletions();
@@ -66,7 +68,7 @@ export default function Profile() {
         <div className="max-w-md mx-auto flex items-center justify-between">
           <h1 className="text-xl font-bold tracking-tight">Profile</h1>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="rounded-full">
+            <Button variant="ghost" size="icon" className="rounded-full" onClick={() => navigate('/settings')}>
               <Settings size={20} />
             </Button>
             <Button 

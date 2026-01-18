@@ -294,6 +294,28 @@ export function useGoals() {
     },
   });
 
+  const archiveAllGoalsMutation = useMutation({
+    mutationFn: async () => {
+      if (!user) throw new Error('Not authenticated');
+      
+      const { error } = await supabase
+        .from('goals')
+        .update({ is_active: false })
+        .eq('user_id', user.id)
+        .eq('is_active', true);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['goals'] });
+      queryClient.invalidateQueries({ queryKey: ['goals-with-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['inactive-goals-with-stats'] });
+    },
+    onError: () => {
+      toast({ title: 'Failed to archive goals', variant: 'destructive' });
+    },
+  });
+
   return {
     goals: goalsQuery.data || [],
     goalsWithStats: goalsWithStatsQuery.data || [],
@@ -306,10 +328,12 @@ export function useGoals() {
       toggleGoalActiveMutation.mutate({ goalId, isActive }),
     completeGoal: completeGoalMutation.mutate,
     deleteCompletion: deleteCompletionMutation.mutate,
+    archiveAllGoals: archiveAllGoalsMutation.mutateAsync,
     isAdding: addGoalMutation.isPending,
     isToggling: toggleGoalActiveMutation.isPending,
     isCompleting: completeGoalMutation.isPending,
     isDeleting: deleteCompletionMutation.isPending,
+    isArchivingAll: archiveAllGoalsMutation.isPending,
   };
 }
 

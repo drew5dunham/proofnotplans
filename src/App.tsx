@@ -9,6 +9,7 @@ import Goals from "./pages/Goals";
 import Leaderboard from "./pages/Leaderboard";
 import Profile from "./pages/Profile";
 import UserProfile from "./pages/UserProfile";
+import Settings from "./pages/Settings";
 import Encourage from "./pages/Encourage";
 import Chat from "./pages/Chat";
 import Auth from "./pages/Auth";
@@ -47,6 +48,7 @@ function AppRoutes() {
       <Route path="/goals" element={<ProtectedRoute><Goals /></ProtectedRoute>} />
       <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+      <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
       <Route path="/user/:userId" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
       <Route path="/group/:groupId" element={<ProtectedRoute><GroupFeed /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
