@@ -1,5 +1,5 @@
 import { Flame, Loader2, Check, X } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import {
   Popover,
@@ -11,7 +11,7 @@ import { useConversations, useUnreadConversationCount } from '@/hooks/useConvers
 import { useNotifications, useUnreadNotificationCount, useMarkNotificationRead, useDeleteNotification } from '@/hooks/useComments';
 import { useAcceptFriendRequest, useIgnoreFriendRequest } from '@/hooks/useFriendRequests';
 import { formatDistanceToNow } from 'date-fns';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 
 interface HeaderProps {
@@ -21,8 +21,11 @@ interface HeaderProps {
 
 export function Header({ title, rightAction }: HeaderProps) {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [confirmDeleteNotif, setConfirmDeleteNotif] = useState<string | null>(null);
+  const [highlightedNotifId, setHighlightedNotifId] = useState<string | null>(null);
+  const highlightedRef = useRef<HTMLDivElement>(null);
   const { data: conversations, isLoading: loadingConversations } = useConversations();
   const { data: unreadConversationCount } = useUnreadConversationCount();
   const { data: notifications, isLoading: loadingNotifications } = useNotifications();
@@ -31,6 +34,35 @@ export function Header({ title, rightAction }: HeaderProps) {
   const deleteNotification = useDeleteNotification();
   const acceptFriendRequest = useAcceptFriendRequest();
   const ignoreFriendRequest = useIgnoreFriendRequest();
+
+  // Check for openNotification query param from push notification clicks
+  useEffect(() => {
+    const openNotificationId = searchParams.get('openNotification');
+    if (openNotificationId) {
+      setPopoverOpen(true);
+      setHighlightedNotifId(openNotificationId);
+      
+      // Remove the query param from URL
+      searchParams.delete('openNotification');
+      setSearchParams(searchParams, { replace: true });
+      
+      // Clear highlight after a delay
+      const timer = setTimeout(() => {
+        setHighlightedNotifId(null);
+      }, 3000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams, setSearchParams]);
+
+  // Scroll to highlighted notification
+  useEffect(() => {
+    if (highlightedNotifId && highlightedRef.current && popoverOpen) {
+      setTimeout(() => {
+        highlightedRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+    }
+  }, [highlightedNotifId, popoverOpen]);
 
   const handleNotificationClick = (notif: any) => {
     // Don't navigate for friend requests - they have action buttons
@@ -48,6 +80,8 @@ export function Header({ title, rightAction }: HeaderProps) {
         navigate(`/group/${notif.reference_id}`);
       } else if (notif.type === 'comment' || notif.type === 'like') {
         navigate(`/?post=${notif.reference_id}`);
+      } else if (notif.type === 'message' || notif.type === 'encouragement') {
+        navigate(`/chat/${notif.reference_id}`);
       }
     }
   };
@@ -174,15 +208,19 @@ export function Header({ title, rightAction }: HeaderProps) {
                           const notif = item.data;
                           const isFriendRequest = notif.type === 'friend_request' && !notif.read_at;
                           const isClickable = !isFriendRequest && notif.reference_id && 
-                            (notif.type === 'comment' || notif.type === 'like' || notif.type === 'group_invite');
+                            (notif.type === 'comment' || notif.type === 'like' || notif.type === 'group_invite' || notif.type === 'message');
+                          const isHighlighted = highlightedNotifId === notif.id;
                           
                           return (
                             <div 
-                              key={notif.id} 
+                              key={notif.id}
+                              ref={isHighlighted ? highlightedRef : null}
                               onClick={() => handleNotificationClick(notif)}
                               className={`relative p-3 rounded-xl transition-colors ${
                                 isClickable ? 'cursor-pointer hover:bg-muted' : ''
-                              } ${!notif.read_at ? 'bg-primary/10' : ''}`}
+                              } ${!notif.read_at ? 'bg-primary/10' : ''} ${
+                                isHighlighted ? 'ring-2 ring-primary animate-pulse' : ''
+                              }`}
                             >
                               {/* Delete button */}
                               <button

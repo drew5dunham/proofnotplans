@@ -148,17 +148,19 @@ export function useGroups() {
       const body = 'Tap to view and respond';
 
       // Create notification for the invited user
-      await supabase.from('notifications').insert({
+      const { data: notification } = await supabase.from('notifications').insert({
         user_id: userId,
         actor_id: user.id,
         type: 'group_invite',
         title,
         body,
         reference_id: groupId,
-      });
+      })
+      .select('id')
+      .single();
 
-      // Send push notification
-      sendPushNotification(userId, title, body, '/');
+      // Send push notification with notification ID
+      sendPushNotification(userId, title, body, '/', notification?.id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['groups'] });

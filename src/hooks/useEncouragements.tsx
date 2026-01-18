@@ -169,8 +169,22 @@ export function useSendEncouragement() {
       const title = `${profile?.name || 'A friend'} sent you a message!`;
       const body = content || '💪 Keep going!';
 
-      // Send push notification
-      sendPushNotification(data.recipient_id, title, body, '/encourage?tab=received');
+      // Create notification for message
+      const { data: notification } = await supabase
+        .from('notifications')
+        .insert({
+          user_id: data.recipient_id,
+          actor_id: user.id,
+          type: 'encouragement',
+          title,
+          body,
+          reference_id: user.id
+        })
+        .select('id')
+        .single();
+
+      // Send push notification with notification ID
+      sendPushNotification(data.recipient_id, title, body, '/encourage?tab=received', notification?.id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['conversations'] });

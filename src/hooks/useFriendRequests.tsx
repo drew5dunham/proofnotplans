@@ -62,7 +62,7 @@ export function useSendFriendRequest() {
       const body = 'Accept or ignore this friend request';
 
       // Create notification for the recipient
-      const { error: notifError } = await supabase
+      const { data: notification, error: notifError } = await supabase
         .from('notifications')
         .insert({
           user_id: friendId,
@@ -71,12 +71,14 @@ export function useSendFriendRequest() {
           title,
           body,
           reference_id: user.id // The sender's user ID for accepting/ignoring
-        });
+        })
+        .select('id')
+        .single();
 
       if (notifError) throw notifError;
 
-      // Send push notification
-      sendPushNotification(friendId, title, body, '/');
+      // Send push notification with notification ID
+      sendPushNotification(friendId, title, body, '/', notification?.id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['search-users'] });
