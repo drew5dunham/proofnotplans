@@ -1,5 +1,5 @@
 import { Users, Target, User, Trophy, Heart } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 const navItems = [
   { icon: Users, label: 'Feed', path: '/' },
@@ -11,6 +11,14 @@ const navItems = [
 
 export function BottomNav() {
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleNavClick = (e: React.MouseEvent, path: string, isActive: boolean) => {
+    if (isActive) {
+      e.preventDefault();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
 
   return (
     <>
@@ -33,6 +41,7 @@ export function BottomNav() {
               <Link
                 key={path}
                 to={path}
+                onClick={(e) => handleNavClick(e, path, isActive)}
                 className={`flex-1 flex flex-col items-center gap-1 py-3 transition-all ${
                   isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
                 }`}
