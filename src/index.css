@@ -78,6 +78,16 @@
     min-height: 100vh;
     min-height: 100dvh;
   }
+
+  /* iOS keyboard accessory view styling */
+  input, textarea {
+    background-color: hsl(var(--background));
+  }
+
+  /* Hide iOS input accessory bar */
+  input::-webkit-input-placeholder {
+    color: hsl(var(--muted-foreground));
+  }
 }
 
 @layer components {
