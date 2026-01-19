@@ -207,7 +207,7 @@ async function sendApnsPush(
       method: 'POST',
       headers: {
         'authorization': `bearer ${jwt}`,
-        'apns-topic': 'app.lovable.5a62f5101acb4e6ca4fa8dc3e6dc84d5',
+        'apns-topic': 'com.HtucvlQTpJTI.proof',
         'apns-push-type': 'alert',
         'apns-priority': '10',
         'apns-expiration': '0',
