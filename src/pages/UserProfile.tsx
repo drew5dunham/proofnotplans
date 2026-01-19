@@ -106,20 +106,46 @@ export default function UserProfile() {
 
   const streak = calculateStreak();
 
-  // Build goals with stats
-  const goalsWithStats: GoalWithStats[] = (goals || []).map(goal => {
-    const goalCompletions = (completions || []).filter(c => c.goal_id === goal.id);
-    const completedCount = goalCompletions.filter(c => c.status === 'completed').length;
-    const lastCompleted = goalCompletions.find(c => c.status === 'completed')?.completed_at;
+  // Build goals with stats - use goals from completions as fallback for visibility-restricted goals
+  const goalsWithStats: GoalWithStats[] = (() => {
+    // Start with directly fetched goals
+    const goalMap = new Map<string, GoalWithStats>();
     
-    return {
-      ...goal,
-      visibility: (goal.visibility || 'public') as 'public' | 'private',
-      frequency: (goal.frequency || 'daily') as import('@/types').Frequency,
-      completionCount: completedCount,
-      lastCompleted: lastCompleted || null,
-    };
-  });
+    // Add goals from the direct query
+    (goals || []).forEach(goal => {
+      const goalCompletions = (completions || []).filter(c => c.goal_id === goal.id);
+      const completedCount = goalCompletions.filter(c => c.status === 'completed').length;
+      const lastCompleted = goalCompletions.find(c => c.status === 'completed')?.completed_at;
+      
+      goalMap.set(goal.id, {
+        ...goal,
+        visibility: (goal.visibility || 'public') as 'public' | 'private',
+        frequency: (goal.frequency || 'daily') as import('@/types').Frequency,
+        completionCount: completedCount,
+        lastCompleted: lastCompleted || null,
+      });
+    });
+    
+    // Add goals from completions that might not be in the direct query (due to RLS)
+    (completions || []).forEach(c => {
+      if (c.goals && !goalMap.has(c.goal_id)) {
+        const goal = c.goals;
+        const goalCompletions = (completions || []).filter(comp => comp.goal_id === goal.id);
+        const completedCount = goalCompletions.filter(comp => comp.status === 'completed').length;
+        const lastCompleted = goalCompletions.find(comp => comp.status === 'completed')?.completed_at;
+        
+        goalMap.set(goal.id, {
+          ...goal,
+          visibility: (goal.visibility || 'public') as 'public' | 'private',
+          frequency: (goal.frequency || 'daily') as import('@/types').Frequency,
+          completionCount: completedCount,
+          lastCompleted: lastCompleted || null,
+        });
+      }
+    });
+    
+    return Array.from(goalMap.values());
+  })();
 
   const userName = profile?.name || 'User';
 
