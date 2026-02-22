@@ -16,6 +16,7 @@ import Auth from "./pages/Auth";
 import GroupFeed from "./pages/GroupFeed";
 import NotFound from "./pages/NotFound";
 import Support from "./pages/Support";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 import { PushNotificationPrompt } from "./components/PushNotificationPrompt";
 import { Loader2 } from "lucide-react";
 
@@ -53,6 +54,7 @@ function AppRoutes() {
       <Route path="/user/:userId" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
       <Route path="/group/:groupId" element={<ProtectedRoute><GroupFeed /></ProtectedRoute>} />
       <Route path="/support" element={<Support />} />
+      <Route path="/privacy-policy" element={<PrivacyPolicy />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
