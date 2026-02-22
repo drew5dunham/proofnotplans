@@ -11,7 +11,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@capacitor/cli": "^8.0.1",
+    "@capacitor/cli": "^8.1.0",
     "@capacitor/core": "^8.0.1",
     "@capacitor/ios": "^8.0.1",
     "@capacitor/push-notifications": "^8.0.0",
