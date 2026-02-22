@@ -15,6 +15,7 @@ import Chat from "./pages/Chat";
 import Auth from "./pages/Auth";
 import GroupFeed from "./pages/GroupFeed";
 import NotFound from "./pages/NotFound";
+import Support from "./pages/Support";
 import { PushNotificationPrompt } from "./components/PushNotificationPrompt";
 import { Loader2 } from "lucide-react";
 
@@ -51,6 +52,7 @@ function AppRoutes() {
       <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
       <Route path="/user/:userId" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
       <Route path="/group/:groupId" element={<ProtectedRoute><GroupFeed /></ProtectedRoute>} />
+      <Route path="/support" element={<Support />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
