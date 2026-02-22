@@ -160,6 +160,7 @@ export default function Settings() {
         { id: 'privacy', label: 'Privacy', icon: Shield, description: 'Profile visibility, friend requests' },
         { id: 'goals', label: 'Goals', icon: Target, description: 'Default visibility, archive' },
         { id: 'support', label: 'Support', icon: HelpCircle, description: 'Get help, contact us' },
+        { id: 'privacy-policy', label: 'Privacy Policy', icon: Shield, description: 'How we handle your data' },
       ].map((item, index) => (
         <motion.button
           key={item.id}
@@ -169,6 +170,8 @@ export default function Settings() {
           onClick={() => {
             if (item.id === 'support') {
               navigate('/support');
+            } else if (item.id === 'privacy-policy') {
+              navigate('/privacy-policy');
             } else {
               setSection(item.id as SettingsSection);
             }
