@@ -15,7 +15,8 @@ import {
   Clock,
   Users,
   Eye,
-  Archive
+  Archive,
+  HelpCircle
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
@@ -158,13 +159,20 @@ export default function Settings() {
         { id: 'notifications', label: 'Notifications', icon: Bell, description: 'Push notifications, reminders' },
         { id: 'privacy', label: 'Privacy', icon: Shield, description: 'Profile visibility, friend requests' },
         { id: 'goals', label: 'Goals', icon: Target, description: 'Default visibility, archive' },
+        { id: 'support', label: 'Support', icon: HelpCircle, description: 'Get help, contact us' },
       ].map((item, index) => (
         <motion.button
           key={item.id}
           initial={{ opacity: 0, x: -10 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: index * 0.05 }}
-          onClick={() => setSection(item.id as SettingsSection)}
+          onClick={() => {
+            if (item.id === 'support') {
+              navigate('/support');
+            } else {
+              setSection(item.id as SettingsSection);
+            }
+          }}
           className="w-full flex items-center justify-between p-4 bg-card rounded-xl hover:bg-muted/50 transition-colors"
         >
           <div className="flex items-center gap-3">
