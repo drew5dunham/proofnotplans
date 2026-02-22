@@ -17,24 +17,41 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Verify authorization - only allow calls with service role key or valid anon key from cron
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader?.startsWith('Bearer ')) {
+    return new Response(
+      JSON.stringify({ error: 'Unauthorized' }),
+      { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
+  const token = authHeader.replace('Bearer ', '');
+  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+  const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+
+  if (token !== serviceRoleKey && token !== anonKey) {
+    return new Response(
+      JSON.stringify({ error: 'Unauthorized' }),
+      { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
   console.log('=== Weekly Leaderboard Check Job Started ===');
   console.log('Time:', new Date().toISOString());
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabase = createClient(supabaseUrl, serviceRoleKey);
 
     // Helper function to get start/end of week
     const getWeekBounds = (date: Date) => {
       const start = new Date(date);
-      start.setDate(start.getDate() - start.getDay()); // Sunday
+      start.setDate(start.getDate() - start.getDay());
       start.setHours(0, 0, 0, 0);
-      
       const end = new Date(start);
       end.setDate(end.getDate() + 6);
       end.setHours(23, 59, 59, 999);
-      
       return { start, end };
     };
 
@@ -205,43 +222,17 @@ serve(async (req) => {
       // Calculate position among friends for consistency
       const friendsAndSelf = [userId, ...Array.from(friendIds)];
       
-      const currentConsistencyAmongFriends = friendsAndSelf
-        .filter(id => currentPositions.get(id)?.consistencyRank)
-        .sort((a, b) => {
-          const aPos = currentPositions.get(a)!;
-          const bPos = currentPositions.get(b)!;
-          return aPos.consistencyRank - bPos.consistencyRank;
+      const getRank = (list: string[], id: string, positions: Map<string, LeaderboardPosition>, key: 'consistencyRank' | 'improvementRank') => {
+        const sorted = list.filter(uid => positions.get(uid)?.[key]).sort((a, b) => {
+          return positions.get(a)![key] - positions.get(b)![key];
         });
+        return sorted.indexOf(id) + 1;
+      };
 
-      const previousConsistencyAmongFriends = friendsAndSelf
-        .filter(id => previousPositions.get(id)?.consistencyRank)
-        .sort((a, b) => {
-          const aPos = previousPositions.get(a)!;
-          const bPos = previousPositions.get(b)!;
-          return aPos.consistencyRank - bPos.consistencyRank;
-        });
-
-      const currentImprovementAmongFriends = friendsAndSelf
-        .filter(id => currentPositions.get(id)?.improvementRank)
-        .sort((a, b) => {
-          const aPos = currentPositions.get(a)!;
-          const bPos = currentPositions.get(b)!;
-          return aPos.improvementRank - bPos.improvementRank;
-        });
-
-      const previousImprovementAmongFriends = friendsAndSelf
-        .filter(id => previousPositions.get(id)?.improvementRank)
-        .sort((a, b) => {
-          const aPos = previousPositions.get(a)!;
-          const bPos = previousPositions.get(b)!;
-          return aPos.improvementRank - bPos.improvementRank;
-        });
-
-      // Get current and previous rank among friends
-      const currentConsistencyRank = currentConsistencyAmongFriends.indexOf(userId) + 1;
-      const previousConsistencyRank = previousConsistencyAmongFriends.indexOf(userId) + 1;
-      const currentImprovementRank = currentImprovementAmongFriends.indexOf(userId) + 1;
-      const previousImprovementRank = previousImprovementAmongFriends.indexOf(userId) + 1;
+      const currentConsistencyRank = getRank(friendsAndSelf, userId, currentPositions, 'consistencyRank');
+      const previousConsistencyRank = getRank(friendsAndSelf, userId, previousPositions, 'consistencyRank');
+      const currentImprovementRank = getRank(friendsAndSelf, userId, currentPositions, 'improvementRank');
+      const previousImprovementRank = getRank(friendsAndSelf, userId, previousPositions, 'improvementRank');
 
       // Check for consistency rank change
       if (currentConsistencyRank > 0 && previousConsistencyRank > 0) {
@@ -303,7 +294,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in weekly-leaderboard-check:', error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
+      JSON.stringify({ error: 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
@@ -355,8 +346,6 @@ async function sendLeaderboardNotification(
 
     if (pushError) {
       console.error('Error sending leaderboard push notification:', pushError);
-    } else {
-      console.log(`Sent leaderboard notification to user ${userId}: ${movedUp ? 'UP' : 'DOWN'} on ${boardName}`);
     }
   } catch (error) {
     console.error('Error in sendLeaderboardNotification:', error);
