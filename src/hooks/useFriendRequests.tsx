@@ -85,25 +85,24 @@ export function useSendFriendRequest() {
 
       // Create notification for the recipient (non-blocking - don't fail the friendship)
       try {
-        const { data: notification, error: notifError } = await supabase
-          .from('notifications')
-          .insert({
-            user_id: friendId,
-            actor_id: user.id,
-            type: 'friend_request',
-            title,
-            body,
-            reference_id: user.id
-          })
-          .select('id')
-          .single();
+        // Use SECURITY DEFINER function to bypass RLS for cross-user notification insert
+        const { data: notificationId, error: notifError } = await supabase
+          .rpc('create_friend_request_notification', {
+            _recipient_id: friendId,
+            _actor_id: user.id,
+            _title: title,
+            _body: body,
+            _reference_id: user.id
+          });
 
         if (notifError) {
           console.error('Failed to create notification:', notifError);
+        } else {
+          console.log('Notification created with ID:', notificationId);
         }
 
         // Send push notification with notification ID
-        sendPushNotification(friendId, title, body, '/', notification?.id);
+        sendPushNotification(friendId, title, body, '/', notificationId);
       } catch (notifErr) {
         console.error('Failed to create notification for friend request:', notifErr);
       }
