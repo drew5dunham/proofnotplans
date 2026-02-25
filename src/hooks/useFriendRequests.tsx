@@ -6,6 +6,7 @@ import { sendPushNotification } from '@/lib/pushNotifications';
 interface SearchResult {
   id: string;
   name: string | null;
+  friendship_status: string;
 }
 
 // Search for users by name (excludes self and existing friends)
@@ -39,6 +40,18 @@ export function useSendFriendRequest() {
   return useMutation({
     mutationFn: async ({ friendId, friendName }: { friendId: string; friendName: string | null }) => {
       if (!user) throw new Error('Not authenticated');
+
+      // Check if friendship already exists
+      const { data: existing } = await supabase
+        .from('friendships')
+        .select('id, status')
+        .or(`and(user_id.eq.${user.id},friend_id.eq.${friendId}),and(user_id.eq.${friendId},friend_id.eq.${user.id})`)
+        .maybeSingle();
+
+      if (existing) {
+        if (existing.status === 'accepted') throw new Error('Already friends');
+        if (existing.status === 'pending') throw new Error('Friend request already pending');
+      }
 
       // Create the friendship with pending status
       const { error: friendshipError } = await supabase

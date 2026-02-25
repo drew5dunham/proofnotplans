@@ -429,6 +429,7 @@ export type Database = {
       search_users_by_name: {
         Args: { _current_user_id: string; _search_term: string }
         Returns: {
+          friendship_status: string
           id: string
           name: string
         }[]

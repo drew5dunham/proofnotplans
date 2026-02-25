@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Users, Loader2, UserPlus, Search, Check } from 'lucide-react';
+import { Users, Loader2, UserPlus, Search, Check, Clock } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -122,25 +122,26 @@ export function FriendsListDialog({ userId, userName }: FriendsListDialogProps) 
                       <div className="flex-1 min-w-0">
                         <p className="font-medium truncate">{user.name || 'Anonymous'}</p>
                       </div>
-                      <Button
-                        size="sm"
-                        variant={sentRequests.has(user.id) ? "secondary" : "default"}
-                        disabled={sentRequests.has(user.id) || sendRequest.isPending}
-                        onClick={() => handleSendRequest(user.id, user.name)}
-                        className="gap-1"
-                      >
-                        {sentRequests.has(user.id) ? (
-                          <>
-                            <Check size={14} />
-                            Sent
-                          </>
-                        ) : (
-                          <>
-                            <UserPlus size={14} />
-                            Add
-                          </>
-                        )}
-                      </Button>
+                      {user.friendship_status === 'accepted' ? (
+                        <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-primary/10 text-primary">
+                          Friend
+                        </span>
+                      ) : user.friendship_status === 'pending' || sentRequests.has(user.id) ? (
+                        <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-muted text-muted-foreground flex items-center gap-1">
+                          <Clock size={12} />
+                          Pending
+                        </span>
+                      ) : (
+                        <Button
+                          size="sm"
+                          disabled={sendRequest.isPending}
+                          onClick={() => handleSendRequest(user.id, user.name)}
+                          className="gap-1"
+                        >
+                          <UserPlus size={14} />
+                          Add
+                        </Button>
+                      )}
                     </motion.div>
                   ))}
                 </div>
