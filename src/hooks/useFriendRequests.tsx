@@ -61,24 +61,26 @@ export function useSendFriendRequest() {
       const title = `${profile?.name || 'Someone'} wants to be your friend`;
       const body = 'Accept or ignore this friend request';
 
-      // Create notification for the recipient
-      const { data: notification, error: notifError } = await supabase
-        .from('notifications')
-        .insert({
-          user_id: friendId,
-          actor_id: user.id,
-          type: 'friend_request',
-          title,
-          body,
-          reference_id: user.id // The sender's user ID for accepting/ignoring
-        })
-        .select('id')
-        .single();
+      // Create notification for the recipient (non-blocking - don't fail the friendship)
+      try {
+        const { data: notification } = await supabase
+          .from('notifications')
+          .insert({
+            user_id: friendId,
+            actor_id: user.id,
+            type: 'friend_request',
+            title,
+            body,
+            reference_id: user.id
+          })
+          .select('id')
+          .single();
 
-      if (notifError) throw notifError;
-
-      // Send push notification with notification ID
-      sendPushNotification(friendId, title, body, '/', notification?.id);
+        // Send push notification with notification ID
+        sendPushNotification(friendId, title, body, '/', notification?.id);
+      } catch (notifErr) {
+        console.warn('Failed to create notification for friend request:', notifErr);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['search-users'] });
