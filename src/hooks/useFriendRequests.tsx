@@ -41,17 +41,26 @@ export function useSendFriendRequest() {
     mutationFn: async ({ friendId, friendName }: { friendId: string; friendName: string | null }) => {
       if (!user) throw new Error('Not authenticated');
 
-      // Check if friendship already exists
-      const { data: existing } = await supabase
+      // Check if friendship already exists in either direction
+      const { data: existingRows, error: existingError } = await supabase
         .from('friendships')
-        .select('id, status')
+        .select('id, status, user_id, friend_id, created_at')
         .or(`and(user_id.eq.${user.id},friend_id.eq.${friendId}),and(user_id.eq.${friendId},friend_id.eq.${user.id})`)
-        .maybeSingle();
+        .order('created_at', { ascending: false });
 
-      if (existing) {
-        if (existing.status === 'accepted') throw new Error('Already friends');
-        if (existing.status === 'pending') throw new Error('Friend request already pending');
-      }
+      if (existingError) throw existingError;
+
+      const hasAccepted = (existingRows || []).some((row) => row.status === 'accepted');
+      const hasPendingSent = (existingRows || []).some(
+        (row) => row.status === 'pending' && row.user_id === user.id && row.friend_id === friendId
+      );
+      const hasPendingReceived = (existingRows || []).some(
+        (row) => row.status === 'pending' && row.user_id === friendId && row.friend_id === user.id
+      );
+
+      if (hasAccepted) throw new Error('Already friends');
+      if (hasPendingSent) throw new Error('Friend request already pending');
+      if (hasPendingReceived) throw new Error('This user already sent you a friend request');
 
       // Create the friendship with pending status
       const { error: friendshipError } = await supabase
