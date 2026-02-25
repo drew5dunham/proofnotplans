@@ -406,6 +406,16 @@ export type Database = {
         Args: { _profile_id: string; _viewer_id: string }
         Returns: boolean
       }
+      create_friend_request_notification: {
+        Args: {
+          _actor_id: string
+          _body: string
+          _recipient_id: string
+          _reference_id: string
+          _title: string
+        }
+        Returns: string
+      }
       create_group: {
         Args: { _category: string; _name: string }
         Returns: {
