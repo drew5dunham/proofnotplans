@@ -76,7 +76,7 @@ export function useSendFriendRequest() {
 
       // Create notification for the recipient (non-blocking - don't fail the friendship)
       try {
-        const { data: notification } = await supabase
+        const { data: notification, error: notifError } = await supabase
           .from('notifications')
           .insert({
             user_id: friendId,
@@ -89,10 +89,14 @@ export function useSendFriendRequest() {
           .select('id')
           .single();
 
+        if (notifError) {
+          console.error('Failed to create notification:', notifError);
+        }
+
         // Send push notification with notification ID
         sendPushNotification(friendId, title, body, '/', notification?.id);
       } catch (notifErr) {
-        console.warn('Failed to create notification for friend request:', notifErr);
+        console.error('Failed to create notification for friend request:', notifErr);
       }
     },
     onSuccess: () => {
@@ -109,7 +113,7 @@ export function useAcceptFriendRequest() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ senderId, notificationId }: { senderId: string; notificationId: string }) => {
+    mutationFn: async ({ senderId, notificationId }: { senderId: string; notificationId?: string }) => {
       if (!user) throw new Error('Not authenticated');
 
       // Update friendship status to accepted
@@ -122,18 +126,27 @@ export function useAcceptFriendRequest() {
 
       if (friendshipError) throw friendshipError;
 
-      // Mark notification as read (which effectively removes it from unread)
-      const { error: notifError } = await supabase
-        .from('notifications')
-        .update({ read_at: new Date().toISOString() })
-        .eq('id', notificationId);
-
-      if (notifError) throw notifError;
+      // Mark notification as read - find by reference if no ID provided
+      if (notificationId) {
+        await supabase
+          .from('notifications')
+          .update({ read_at: new Date().toISOString() })
+          .eq('id', notificationId);
+      } else {
+        await supabase
+          .from('notifications')
+          .update({ read_at: new Date().toISOString() })
+          .eq('user_id', user.id)
+          .eq('type', 'friend_request')
+          .eq('reference_id', senderId)
+          .is('read_at', null);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['friends'] });
       queryClient.invalidateQueries({ queryKey: ['friend-count'] });
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['search-users'] });
     }
   });
 }
@@ -144,7 +157,7 @@ export function useIgnoreFriendRequest() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ senderId, notificationId }: { senderId: string; notificationId: string }) => {
+    mutationFn: async ({ senderId, notificationId }: { senderId: string; notificationId?: string }) => {
       if (!user) throw new Error('Not authenticated');
 
       // Delete the pending friendship
@@ -158,15 +171,24 @@ export function useIgnoreFriendRequest() {
       if (friendshipError) throw friendshipError;
 
       // Mark notification as read
-      const { error: notifError } = await supabase
-        .from('notifications')
-        .update({ read_at: new Date().toISOString() })
-        .eq('id', notificationId);
-
-      if (notifError) throw notifError;
+      if (notificationId) {
+        await supabase
+          .from('notifications')
+          .update({ read_at: new Date().toISOString() })
+          .eq('id', notificationId);
+      } else {
+        await supabase
+          .from('notifications')
+          .update({ read_at: new Date().toISOString() })
+          .eq('user_id', user.id)
+          .eq('type', 'friend_request')
+          .eq('reference_id', senderId)
+          .is('read_at', null);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['search-users'] });
     }
   });
 }
