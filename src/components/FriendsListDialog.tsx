@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Users, Loader2, UserPlus, Search, Check, Clock } from 'lucide-react';
+import { Users, Loader2, UserPlus, Search, Check, Clock, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { UserAvatar } from '@/components/UserAvatar';
 import { useFriends, useFriendCount } from '@/hooks/useFriends';
-import { useSearchUsers, useSendFriendRequest } from '@/hooks/useFriendRequests';
+import { useSearchUsers, useSendFriendRequest, useAcceptFriendRequest, useIgnoreFriendRequest } from '@/hooks/useFriendRequests';
+import { useAuth } from '@/hooks/useAuth';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 
@@ -28,6 +29,9 @@ export function FriendsListDialog({ userId, userName }: FriendsListDialogProps) 
   const { data: friendCount } = useFriendCount(userId);
   const { data: searchResults, isLoading: searching } = useSearchUsers(searchTerm);
   const sendRequest = useSendFriendRequest();
+  const acceptFriendRequest = useAcceptFriendRequest();
+  const ignoreFriendRequest = useIgnoreFriendRequest();
+  const { user } = useAuth();
 
   // Clear the query param when dialog opens
   useEffect(() => {
@@ -49,6 +53,24 @@ export function FriendsListDialog({ userId, userName }: FriendsListDialogProps) 
       setOpen(false);
     } catch (error) {
       toast.error('Failed to send friend request');
+    }
+  };
+
+  const handleAcceptFromSearch = async (senderId: string, senderName: string | null) => {
+    try {
+      await acceptFriendRequest.mutateAsync({ senderId });
+      toast.success(`You and ${senderName || 'user'} are now friends!`);
+    } catch (error) {
+      toast.error('Failed to accept friend request');
+    }
+  };
+
+  const handleIgnoreFromSearch = async (senderId: string) => {
+    try {
+      await ignoreFriendRequest.mutateAsync({ senderId });
+      toast.success('Friend request ignored');
+    } catch (error) {
+      toast.error('Failed to ignore friend request');
     }
   };
 
@@ -126,7 +148,28 @@ export function FriendsListDialog({ userId, userName }: FriendsListDialogProps) 
                         <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-primary/10 text-primary">
                           Friend
                         </span>
-                      ) : user.friendship_status === 'pending' || sentRequests.has(user.id) ? (
+                      ) : user.friendship_status === 'pending_received' ? (
+                        <div className="flex gap-1">
+                          <Button
+                            size="sm"
+                            className="gap-1 h-8 px-2"
+                            onClick={() => handleAcceptFromSearch(user.id, user.name)}
+                            disabled={acceptFriendRequest.isPending || ignoreFriendRequest.isPending}
+                          >
+                            <Check size={14} />
+                            Accept
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="gap-1 h-8 px-2"
+                            onClick={() => handleIgnoreFromSearch(user.id)}
+                            disabled={acceptFriendRequest.isPending || ignoreFriendRequest.isPending}
+                          >
+                            <X size={14} />
+                          </Button>
+                        </div>
+                      ) : user.friendship_status === 'pending_sent' || sentRequests.has(user.id) ? (
                         <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-muted text-muted-foreground flex items-center gap-1">
                           <Clock size={12} />
                           Pending
