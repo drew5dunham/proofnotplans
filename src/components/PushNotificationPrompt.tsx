@@ -1,20 +1,29 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Bell, X } from 'lucide-react';
 import { useCombinedPushNotifications } from '@/hooks/useCombinedPushNotifications';
+import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 
 export const PushNotificationPrompt = () => {
   const { isSupported, isSubscribed, permission, subscribe } = useCombinedPushNotifications();
+  const { user } = useAuth();
   const [dismissed, setDismissed] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  const dismissKey = useMemo(
+    () => `push-prompt-dismissed:${user?.id ?? 'anonymous'}`,
+    [user?.id]
+  );
+
   useEffect(() => {
-    const wasDismissed = localStorage.getItem('push-prompt-dismissed');
+    const wasDismissed = localStorage.getItem(dismissKey);
     if (wasDismissed) {
       setDismissed(true);
+    } else {
+      setDismissed(false);
     }
-  }, []);
+  }, [dismissKey]);
 
   if (!isSupported || dismissed || isSubscribed || permission === 'denied') {
     return null;
@@ -34,7 +43,7 @@ export const PushNotificationPrompt = () => {
 
   const handleDismiss = () => {
     setDismissed(true);
-    localStorage.setItem('push-prompt-dismissed', 'true');
+    localStorage.setItem(dismissKey, 'true');
   };
 
   return (

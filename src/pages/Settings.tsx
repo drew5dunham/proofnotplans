@@ -22,6 +22,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { useSettings } from '@/hooks/useSettings';
 import { useGoals } from '@/hooks/useGoals';
+import { useCombinedPushNotifications } from '@/hooks/useCombinedPushNotifications';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -62,6 +63,7 @@ export default function Settings() {
   const { profile, updateProfile, isUpdating: isUpdatingProfile } = useProfile();
   const { settings, updateSettings, isLoading: settingsLoading, isUpdating: isUpdatingSettings } = useSettings();
   const { archiveAllGoals, isArchivingAll } = useGoals();
+  const { isNative, isSubscribed, permission, subscribe } = useCombinedPushNotifications() as any;
   
   const [section, setSection] = useState<SettingsSection>('main');
   
@@ -267,7 +269,19 @@ export default function Settings() {
           </div>
           <Switch
             checked={settings?.push_notifications_enabled ?? true}
-            onCheckedChange={(checked) => updateSettings({ push_notifications_enabled: checked })}
+            onCheckedChange={async (checked) => {
+              updateSettings({ push_notifications_enabled: checked });
+              if (checked && isNative && !isSubscribed) {
+                const success = await subscribe();
+                if (success) {
+                  toast.success('Push notifications enabled!');
+                } else if (permission === 'denied') {
+                  toast.error('Notifications blocked. Please enable them in your device Settings.');
+                } else {
+                  toast.error('Failed to enable push notifications');
+                }
+              }
+            }}
             disabled={isUpdatingSettings}
           />
         </div>
