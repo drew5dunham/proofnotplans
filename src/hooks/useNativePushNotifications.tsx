@@ -11,9 +11,14 @@ export const useNativePushNotifications = () => {
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [permission, setPermission] = useState<'prompt' | 'granted' | 'denied'>('prompt');
   const listenersAdded = useRef(false);
+  // Store the latest token so the debug button can use it
+  const latestToken = useRef<string | null>(null);
+
+  console.log('[PUSH_DEBUG] useNativePushNotifications hook init, user:', user?.id ?? 'none', 'isNative:', Capacitor.isNativePlatform());
 
   useEffect(() => {
     const supported = Capacitor.isNativePlatform();
+    console.log('[PUSH_DEBUG] Platform check — isNative:', supported);
     setIsSupported(supported);
     
     if (supported) {
@@ -21,31 +26,34 @@ export const useNativePushNotifications = () => {
     }
   }, []);
 
+  // Attach listeners + check subscription when user is ready
   useEffect(() => {
     if (isSupported && user) {
-      checkSubscription();
+      console.log('[PUSH_DEBUG] User ready, setting up listeners if needed');
       if (!listenersAdded.current) {
         setupListeners();
         listenersAdded.current = true;
-        console.log('[PUSH_DEBUG] Listeners added (once)');
+        console.log('[PUSH_DEBUG] Listeners attached (first time)');
       }
+      checkSubscription();
     }
   }, [isSupported, user]);
 
-  // Auto-register if permission already granted
+  // Auto-register on startup if permission already granted
   useEffect(() => {
     if (isSupported && permission === 'granted' && user) {
-      console.log('[PUSH_DEBUG] Permission already granted, auto-registering');
-      PushNotifications.register().catch(err =>
-        console.error('[PUSH_DEBUG] Auto-register failed:', err)
-      );
+      console.log('[PUSH_DEBUG] Auto-register: permission granted + user present, calling PushNotifications.register()');
+      PushNotifications.register()
+        .then(() => console.log('[PUSH_DEBUG] Auto-register: register() resolved'))
+        .catch(err => console.error('[PUSH_DEBUG] Auto-register: register() rejected:', err));
     }
   }, [isSupported, permission, user]);
 
   const checkPermission = async () => {
     try {
+      console.log('[PUSH_DEBUG] checkPermission: calling PushNotifications.checkPermissions()');
       const result = await PushNotifications.checkPermissions();
-      console.log('[PUSH_DEBUG] checkPermissions result:', result.receive);
+      console.log('[PUSH_DEBUG] checkPermission result:', result.receive);
       if (result.receive === 'granted') {
         setPermission('granted');
       } else if (result.receive === 'denied') {
@@ -54,7 +62,7 @@ export const useNativePushNotifications = () => {
         setPermission('prompt');
       }
     } catch (error) {
-      console.error('[PUSH_DEBUG] Error checking push permission:', error);
+      console.error('[PUSH_DEBUG] checkPermission error:', error);
     }
   };
 
@@ -62,6 +70,7 @@ export const useNativePushNotifications = () => {
     if (!user) return;
     
     try {
+      console.log('[PUSH_DEBUG] checkSubscription: querying for user', user.id);
       const { data, error } = await supabase
         .from('push_subscriptions')
         .select('id')
@@ -71,7 +80,7 @@ export const useNativePushNotifications = () => {
         .limit(1);
       
       const count = data?.length ?? 0;
-      console.log('[PUSH_DEBUG] checkSubscription: found', count, 'subscription(s) for user', user.id);
+      console.log('[PUSH_DEBUG] checkSubscription: found', count, 'row(s), error:', error?.message ?? 'none');
       
       if (!error && count > 0) {
         setIsSubscribed(true);
@@ -79,101 +88,112 @@ export const useNativePushNotifications = () => {
         setIsSubscribed(false);
       }
     } catch (error) {
-      console.error('[PUSH_DEBUG] Error checking subscription:', error);
+      console.error('[PUSH_DEBUG] checkSubscription exception:', error);
     }
   };
 
   const setupListeners = () => {
-    // Handle registration success
+    console.log('[PUSH_DEBUG] setupListeners: attaching registration listener');
+
+    // Registration success
     PushNotifications.addListener('registration', async (token: Token) => {
-      console.log('[PUSH_DEBUG] Registration success, token:', token.value);
+      console.log('[PUSH_DEBUG] >>> registration listener fired, token:', token.value?.substring(0, 20), '... length:', token.value?.length);
+      latestToken.current = token.value;
       
       if (user) {
+        console.log('[PUSH_DEBUG] registration listener: user present, calling saveToken for user', user.id);
         const saved = await saveToken(token.value);
+        console.log('[PUSH_DEBUG] registration listener: saveToken returned', saved);
         if (!saved) {
-          console.error('[PUSH_DEBUG] Failed to save token after registration');
-        } else {
-          console.log('[PUSH_DEBUG] Token saved successfully after registration');
+          toast.error('[DEBUG] Token save failed — check logs');
         }
       } else {
-        console.warn('[PUSH_DEBUG] Registration event fired but no user available');
+        console.warn('[PUSH_DEBUG] registration listener: NO user available, cannot save token');
       }
     });
 
-    // Handle registration error
+    // Registration error
     PushNotifications.addListener('registrationError', (error) => {
-      console.error('[PUSH_DEBUG] Push registration error:', error);
+      console.error('[PUSH_DEBUG] >>> registrationError listener fired:', JSON.stringify(error));
     });
 
-    // Handle notification received when app is in foreground
+    // Foreground notification
     PushNotifications.addListener('pushNotificationReceived', (notification: PushNotificationSchema) => {
-      console.log('[PUSH_DEBUG] Push notification received in foreground:', notification);
+      console.log('[PUSH_DEBUG] pushNotificationReceived:', notification);
     });
 
-    // Handle notification action (user tapped on notification)
+    // Notification tap
     PushNotifications.addListener('pushNotificationActionPerformed', (action: ActionPerformed) => {
-      console.log('[PUSH_DEBUG] Push notification action performed:', action);
-      
+      console.log('[PUSH_DEBUG] pushNotificationActionPerformed:', action);
       const data = action.notification.data;
       if (data?.url) {
         window.location.href = data.url;
       }
     });
+
+    console.log('[PUSH_DEBUG] setupListeners: all listeners attached');
   };
 
   const saveToken = async (deviceToken: string): Promise<boolean> => {
-    if (!user) return false;
+    if (!user) {
+      console.error('[PUSH_DEBUG] saveToken: no user');
+      return false;
+    }
 
     try {
-      console.log('[PUSH_DEBUG] Saving token via edge function for user', user.id, 'token prefix:', deviceToken.substring(0, 12));
+      console.log('[PUSH_DEBUG] saveToken: invoking edge function register-ios-push-token, user:', user.id, 'token prefix:', deviceToken.substring(0, 12));
       
       const { data, error } = await supabase.functions.invoke('register-ios-push-token', {
         body: { token: deviceToken },
       });
 
+      console.log('[PUSH_DEBUG] saveToken: invoke returned data:', JSON.stringify(data), 'error:', error?.message ?? 'none');
+
       if (error) {
-        console.error('[PUSH_DEBUG] Edge function invoke error:', error.message);
+        console.error('[PUSH_DEBUG] saveToken: edge function error:', error.message);
         toast.error('Failed to save push token: ' + error.message);
         return false;
       }
 
       if (data && !data.success) {
-        console.error('[PUSH_DEBUG] Edge function returned failure:', data);
+        console.error('[PUSH_DEBUG] saveToken: edge function returned failure:', JSON.stringify(data));
         toast.error('Failed to save push token');
         return false;
       }
 
       setIsSubscribed(true);
-      console.log('[PUSH_DEBUG] Token saved via edge function, isSubscribed = true');
+      console.log('[PUSH_DEBUG] saveToken: SUCCESS, isSubscribed = true');
       return true;
     } catch (error) {
-      console.error('[PUSH_DEBUG] Exception saving device token:', error);
+      console.error('[PUSH_DEBUG] saveToken: exception:', error);
       return false;
     }
   };
 
   const subscribe = useCallback(async () => {
     if (!user) {
-      console.error('[PUSH_DEBUG] subscribe: User not authenticated');
+      console.error('[PUSH_DEBUG] subscribe: no user');
       return false;
     }
 
     try {
+      console.log('[PUSH_DEBUG] subscribe: requesting permissions');
       const permResult = await PushNotifications.requestPermissions();
-      console.log('[PUSH_DEBUG] requestPermissions result:', permResult.receive);
+      console.log('[PUSH_DEBUG] subscribe: requestPermissions result:', permResult.receive);
       
       if (permResult.receive === 'granted') {
         setPermission('granted');
+        console.log('[PUSH_DEBUG] subscribe: calling register()');
         await PushNotifications.register();
-        console.log('[PUSH_DEBUG] PushNotifications.register() called after permission grant');
+        console.log('[PUSH_DEBUG] subscribe: register() done');
         return true;
       } else {
         setPermission('denied');
-        console.log('[PUSH_DEBUG] Push notification permission denied');
+        console.log('[PUSH_DEBUG] subscribe: permission denied');
         return false;
       }
     } catch (error) {
-      console.error('[PUSH_DEBUG] Error subscribing to push:', error);
+      console.error('[PUSH_DEBUG] subscribe error:', error);
       return false;
     }
   }, [user]);
@@ -184,32 +204,63 @@ export const useNativePushNotifications = () => {
       return false;
     }
     
-    console.log('[PUSH_DEBUG] forceRegister called');
+    console.log('[PUSH_DEBUG] forceRegister: called');
     
     try {
-      // Check / request permission first
       const permResult = await PushNotifications.checkPermissions();
       console.log('[PUSH_DEBUG] forceRegister: current permission:', permResult.receive);
       
       if (permResult.receive !== 'granted') {
         const reqResult = await PushNotifications.requestPermissions();
+        console.log('[PUSH_DEBUG] forceRegister: requestPermissions result:', reqResult.receive);
         if (reqResult.receive !== 'granted') {
-          console.log('[PUSH_DEBUG] forceRegister: permission not granted');
           setPermission('denied');
           return false;
         }
         setPermission('granted');
       }
       
-      // Register — the 'registration' listener will call saveToken
+      console.log('[PUSH_DEBUG] forceRegister: calling PushNotifications.register()');
       await PushNotifications.register();
-      console.log('[PUSH_DEBUG] forceRegister: register() called');
+      console.log('[PUSH_DEBUG] forceRegister: register() done, waiting for registration listener');
       return true;
     } catch (error) {
       console.error('[PUSH_DEBUG] forceRegister error:', error);
       return false;
     }
   }, [user]);
+
+  // Directly invoke the edge function with a stored token (for debug button)
+  const forceInvokeWithToken = useCallback(async () => {
+    if (!user) {
+      console.error('[PUSH_DEBUG] forceInvokeWithToken: no user');
+      toast.error('No user logged in');
+      return false;
+    }
+    
+    // First try to register to get a fresh token
+    console.log('[PUSH_DEBUG] forceInvokeWithToken: calling forceRegister first');
+    await forceRegister();
+    
+    // Wait a moment for the registration listener to fire
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    const token = latestToken.current;
+    if (!token) {
+      console.error('[PUSH_DEBUG] forceInvokeWithToken: no token available after register');
+      toast.error('No token received from APNs — check Xcode console');
+      return false;
+    }
+    
+    console.log('[PUSH_DEBUG] forceInvokeWithToken: have token, calling saveToken directly');
+    const saved = await saveToken(token);
+    if (saved) {
+      toast.success('Push token registered successfully!');
+    } else {
+      toast.error('Failed to register push token — check logs');
+    }
+    return saved;
+  }, [user, forceRegister]);
 
   const unsubscribe = useCallback(async () => {
     if (!user) return false;
@@ -225,7 +276,7 @@ export const useNativePushNotifications = () => {
       console.log('[PUSH_DEBUG] Unsubscribed, tokens deleted');
       return true;
     } catch (error) {
-      console.error('[PUSH_DEBUG] Error unsubscribing:', error);
+      console.error('[PUSH_DEBUG] unsubscribe error:', error);
       return false;
     }
   }, [user]);
@@ -236,6 +287,7 @@ export const useNativePushNotifications = () => {
     permission,
     subscribe,
     unsubscribe,
-    forceRegister
+    forceRegister,
+    forceInvokeWithToken,
   };
 };

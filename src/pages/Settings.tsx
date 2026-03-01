@@ -63,7 +63,8 @@ export default function Settings() {
   const { profile, updateProfile, isUpdating: isUpdatingProfile } = useProfile();
   const { settings, updateSettings, isLoading: settingsLoading, isUpdating: isUpdatingSettings } = useSettings();
   const { archiveAllGoals, isArchivingAll } = useGoals();
-  const { isNative, isSubscribed, permission, subscribe, forceRegister } = useCombinedPushNotifications() as any;
+  const { isNative, isSubscribed, permission, subscribe, forceRegister, forceInvokeWithToken } = useCombinedPushNotifications() as any;
+  const [isForceRegistering, setIsForceRegistering] = useState(false);
   
   const [section, setSection] = useState<SettingsSection>('main');
   
@@ -323,6 +324,33 @@ export default function Settings() {
           />
         </div>
       </div>
+
+      {/* TEMP DEBUG: Force Push Token Register button */}
+      {isNative && (
+        <button
+          onClick={async () => {
+            setIsForceRegistering(true);
+            try {
+              if (forceInvokeWithToken) {
+                await forceInvokeWithToken();
+              } else {
+                toast.error('forceInvokeWithToken not available');
+              }
+            } finally {
+              setIsForceRegistering(false);
+            }
+          }}
+          disabled={isForceRegistering}
+          className="w-full flex items-center justify-center gap-2 p-4 bg-orange-500/20 text-orange-700 dark:text-orange-300 rounded-xl hover:bg-orange-500/30 transition-colors border-2 border-dashed border-orange-400"
+        >
+          {isForceRegistering ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Bell size={20} />
+          )}
+          <span className="font-medium">⚠️ TEMP DEBUG: Force Push Token Register</span>
+        </button>
+      )}
     </div>
   );
 
