@@ -22,6 +22,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { useSettings } from '@/hooks/useSettings';
 import { useGoals } from '@/hooks/useGoals';
+import { useCombinedPushNotifications } from '@/hooks/useCombinedPushNotifications';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -62,6 +63,7 @@ export default function Settings() {
   const { profile, updateProfile, isUpdating: isUpdatingProfile } = useProfile();
   const { settings, updateSettings, isLoading: settingsLoading, isUpdating: isUpdatingSettings } = useSettings();
   const { archiveAllGoals, isArchivingAll } = useGoals();
+  const { isNative, isSubscribed, permission, subscribe } = useCombinedPushNotifications();
   
   const [section, setSection] = useState<SettingsSection>('main');
   
@@ -86,6 +88,26 @@ export default function Settings() {
       navigate('/profile');
     } else {
       setSection('main');
+    }
+  };
+
+  const handleTogglePushNotifications = async (checked: boolean) => {
+    updateSettings({ push_notifications_enabled: checked });
+
+    if (!checked) return;
+
+    // On native iOS/Android, enabling this setting should also ensure OS permission + token subscription.
+    if (isNative && !isSubscribed) {
+      const success = await subscribe();
+      if (!success) {
+        if (permission === 'denied') {
+          toast.error('Push is blocked in iOS Settings. Enable notifications for this app in system settings.');
+        } else {
+          toast.error('Could not enable push notifications. Please try again.');
+        }
+      } else {
+        toast.success('Push notifications enabled');
+      }
     }
   };
 
@@ -267,7 +289,7 @@ export default function Settings() {
           </div>
           <Switch
             checked={settings?.push_notifications_enabled ?? true}
-            onCheckedChange={(checked) => updateSettings({ push_notifications_enabled: checked })}
+            onCheckedChange={handleTogglePushNotifications}
             disabled={isUpdatingSettings}
           />
         </div>
