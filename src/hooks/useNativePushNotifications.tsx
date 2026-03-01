@@ -98,7 +98,7 @@ export const useNativePushNotifications = () => {
     // Registration success
     PushNotifications.addListener('registration', async (token: Token) => {
       console.log('[PUSH_DEBUG] >>> registration listener fired, token:', token.value?.substring(0, 20), '... length:', token.value?.length);
-      latestToken.current = token.value;
+      toast.success('APNs token received! Length: ' + token.value?.length);
       
       if (user) {
         console.log('[PUSH_DEBUG] registration listener: user present, calling saveToken for user', user.id);
@@ -115,6 +115,7 @@ export const useNativePushNotifications = () => {
     // Registration error
     PushNotifications.addListener('registrationError', (error) => {
       console.error('[PUSH_DEBUG] >>> registrationError listener fired:', JSON.stringify(error));
+      toast.error('APNs registration failed: ' + (error?.error || JSON.stringify(error)));
     });
 
     // Foreground notification
