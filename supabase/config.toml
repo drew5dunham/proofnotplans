@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.weekly-leaderboard-check]
 verify_jwt = false
+
+[functions.register-ios-push-token]
+verify_jwt = false

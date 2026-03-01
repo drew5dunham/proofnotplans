@@ -125,27 +125,26 @@ export const useNativePushNotifications = () => {
     if (!user) return false;
 
     try {
-      console.log('[PUSH_DEBUG] Saving token for user', user.id, 'token:', deviceToken.substring(0, 10) + '...');
+      console.log('[PUSH_DEBUG] Saving token via edge function for user', user.id, 'token prefix:', deviceToken.substring(0, 12));
       
-      const { error } = await supabase.from('push_subscriptions').upsert({
-        user_id: user.id,
-        endpoint: `apns:${deviceToken}`,
-        device_token: deviceToken,
-        platform: 'ios',
-        p256dh: '',
-        auth: ''
-      }, {
-        onConflict: 'user_id,endpoint,platform'
+      const { data, error } = await supabase.functions.invoke('register-ios-push-token', {
+        body: { token: deviceToken },
       });
 
       if (error) {
-        console.error('[PUSH_DEBUG] Supabase error saving device token:', error.message, error.details);
+        console.error('[PUSH_DEBUG] Edge function invoke error:', error.message);
         toast.error('Failed to save push token: ' + error.message);
         return false;
       }
 
+      if (data && !data.success) {
+        console.error('[PUSH_DEBUG] Edge function returned failure:', data);
+        toast.error('Failed to save push token');
+        return false;
+      }
+
       setIsSubscribed(true);
-      console.log('[PUSH_DEBUG] Token saved, isSubscribed = true');
+      console.log('[PUSH_DEBUG] Token saved via edge function, isSubscribed = true');
       return true;
     } catch (error) {
       console.error('[PUSH_DEBUG] Exception saving device token:', error);
