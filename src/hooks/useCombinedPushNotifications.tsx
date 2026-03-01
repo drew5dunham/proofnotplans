@@ -16,12 +16,14 @@ export const useCombinedPushNotifications = () => {
   if (isNative) {
     return {
       ...nativePush,
-      isNative: true
+      isNative: true,
+      forceInvokeWithToken: nativePush.forceInvokeWithToken,
     };
   }
   
   return {
     ...webPush,
-    isNative: false
+    isNative: false,
+    forceInvokeWithToken: undefined,
   };
 };

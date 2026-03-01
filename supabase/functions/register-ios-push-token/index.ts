@@ -8,6 +8,8 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  console.log("[PUSH_DEBUG] register-ios-push-token called, method:", req.method);
+
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -15,6 +17,8 @@ serve(async (req) => {
   try {
     // --- Authenticate caller ---
     const authHeader = req.headers.get("Authorization");
+    console.log("[PUSH_DEBUG] Authorization header present:", !!authHeader);
+
     if (!authHeader?.startsWith("Bearer ")) {
       console.error("[PUSH_DEBUG] Missing or invalid Authorization header");
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -29,24 +33,25 @@ serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } =
-      await anonClient.auth.getClaims(token);
+    const jwt = authHeader.replace("Bearer ", "");
+    const { data: userData, error: userError } = await anonClient.auth.getUser(jwt);
 
-    if (claimsError || !claimsData?.claims) {
-      console.error("[PUSH_DEBUG] Auth failed:", claimsError?.message);
+    if (userError || !userData?.user) {
+      console.error("[PUSH_DEBUG] Auth getUser failed:", userError?.message);
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const userId = claimsData.claims.sub as string;
+    const userId = userData.user.id;
     console.log("[PUSH_DEBUG] Authenticated user:", userId);
 
     // --- Validate body ---
     const body = await req.json();
     const deviceToken = body?.token;
+
+    console.log("[PUSH_DEBUG] Token present:", !!deviceToken, "length:", deviceToken?.length ?? 0);
 
     if (!deviceToken || typeof deviceToken !== "string" || !deviceToken.trim()) {
       console.error("[PUSH_DEBUG] Invalid or missing token in body");
@@ -88,7 +93,7 @@ serve(async (req) => {
 
     if (upsertError) {
       console.error(
-        "[PUSH_DEBUG] Upsert failed:",
+        "[PUSH_DEBUG] Upsert FAILED:",
         upsertError.message,
         upsertError.details
       );
@@ -101,7 +106,7 @@ serve(async (req) => {
       );
     }
 
-    console.log("[PUSH_DEBUG] Token saved successfully for user", userId);
+    console.log("[PUSH_DEBUG] Upsert SUCCESS for user", userId);
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
