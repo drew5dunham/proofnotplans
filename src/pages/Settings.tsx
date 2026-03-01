@@ -23,6 +23,7 @@ import { useProfile } from '@/hooks/useProfile';
 import { useSettings } from '@/hooks/useSettings';
 import { useGoals } from '@/hooks/useGoals';
 import { useCombinedPushNotifications } from '@/hooks/useCombinedPushNotifications';
+import { useNativePushNotifications } from '@/hooks/useNativePushNotifications';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -64,6 +65,7 @@ export default function Settings() {
   const { settings, updateSettings, isLoading: settingsLoading, isUpdating: isUpdatingSettings } = useSettings();
   const { archiveAllGoals, isArchivingAll } = useGoals();
   const { isNative, isSubscribed, permission, subscribe, forceRegister, forceInvokeWithToken } = useCombinedPushNotifications() as any;
+  const nativePush = useNativePushNotifications();
   const [isForceRegistering, setIsForceRegistering] = useState(false);
   
   const [section, setSection] = useState<SettingsSection>('main');
@@ -331,11 +333,8 @@ export default function Settings() {
           onClick={async () => {
             setIsForceRegistering(true);
             try {
-              if (forceInvokeWithToken) {
-                await forceInvokeWithToken();
-              } else {
-                toast.error('forceInvokeWithToken not available');
-              }
+              // Always use native hook directly to bypass platform detection issues
+              await nativePush.forceInvokeWithToken();
             } finally {
               setIsForceRegistering(false);
             }
