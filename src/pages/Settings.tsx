@@ -325,8 +325,8 @@ export default function Settings() {
         </div>
       </div>
 
-      {/* TEMP DEBUG: Force Push Token Register button */}
-      {isNative && (
+      {/* TEMP DEBUG: Force Push Token Register button - always visible for testing */}
+      {(
         <button
           onClick={async () => {
             setIsForceRegistering(true);
