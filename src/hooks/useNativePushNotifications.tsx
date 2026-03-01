@@ -1,17 +1,18 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { PushNotifications, Token, PushNotificationSchema, ActionPerformed } from '@capacitor/push-notifications';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { toast } from 'sonner';
 
 export const useNativePushNotifications = () => {
   const { user } = useAuth();
   const [isSupported, setIsSupported] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [permission, setPermission] = useState<'prompt' | 'granted' | 'denied'>('prompt');
+  const listenersAdded = useRef(false);
 
   useEffect(() => {
-    // Only supported on native platforms
     const supported = Capacitor.isNativePlatform();
     setIsSupported(supported);
     
@@ -23,13 +24,28 @@ export const useNativePushNotifications = () => {
   useEffect(() => {
     if (isSupported && user) {
       checkSubscription();
-      setupListeners();
+      if (!listenersAdded.current) {
+        setupListeners();
+        listenersAdded.current = true;
+        console.log('[PUSH_DEBUG] Listeners added (once)');
+      }
     }
   }, [isSupported, user]);
+
+  // Auto-register if permission already granted
+  useEffect(() => {
+    if (isSupported && permission === 'granted' && user) {
+      console.log('[PUSH_DEBUG] Permission already granted, auto-registering');
+      PushNotifications.register().catch(err =>
+        console.error('[PUSH_DEBUG] Auto-register failed:', err)
+      );
+    }
+  }, [isSupported, permission, user]);
 
   const checkPermission = async () => {
     try {
       const result = await PushNotifications.checkPermissions();
+      console.log('[PUSH_DEBUG] checkPermissions result:', result.receive);
       if (result.receive === 'granted') {
         setPermission('granted');
       } else if (result.receive === 'denied') {
@@ -38,7 +54,7 @@ export const useNativePushNotifications = () => {
         setPermission('prompt');
       }
     } catch (error) {
-      console.error('Error checking push permission:', error);
+      console.error('[PUSH_DEBUG] Error checking push permission:', error);
     }
   };
 
@@ -51,42 +67,53 @@ export const useNativePushNotifications = () => {
         .select('id')
         .eq('user_id', user.id)
         .eq('platform', 'ios')
+        .not('device_token', 'is', null)
         .limit(1);
       
-      if (!error && data && data.length > 0) {
+      const count = data?.length ?? 0;
+      console.log('[PUSH_DEBUG] checkSubscription: found', count, 'subscription(s) for user', user.id);
+      
+      if (!error && count > 0) {
         setIsSubscribed(true);
+      } else {
+        setIsSubscribed(false);
       }
     } catch (error) {
-      console.error('Error checking subscription:', error);
+      console.error('[PUSH_DEBUG] Error checking subscription:', error);
     }
   };
 
   const setupListeners = () => {
     // Handle registration success
     PushNotifications.addListener('registration', async (token: Token) => {
-      console.log('Push registration success, token:', token.value);
+      console.log('[PUSH_DEBUG] Registration success, token:', token.value);
       
       if (user) {
-        await saveToken(token.value);
+        const saved = await saveToken(token.value);
+        if (!saved) {
+          console.error('[PUSH_DEBUG] Failed to save token after registration');
+        } else {
+          console.log('[PUSH_DEBUG] Token saved successfully after registration');
+        }
+      } else {
+        console.warn('[PUSH_DEBUG] Registration event fired but no user available');
       }
     });
 
     // Handle registration error
     PushNotifications.addListener('registrationError', (error) => {
-      console.error('Push registration error:', error);
+      console.error('[PUSH_DEBUG] Push registration error:', error);
     });
 
     // Handle notification received when app is in foreground
     PushNotifications.addListener('pushNotificationReceived', (notification: PushNotificationSchema) => {
-      console.log('Push notification received:', notification);
-      // You can show an in-app notification here
+      console.log('[PUSH_DEBUG] Push notification received in foreground:', notification);
     });
 
     // Handle notification action (user tapped on notification)
     PushNotifications.addListener('pushNotificationActionPerformed', (action: ActionPerformed) => {
-      console.log('Push notification action performed:', action);
+      console.log('[PUSH_DEBUG] Push notification action performed:', action);
       
-      // Get the URL from the notification data and navigate
       const data = action.notification.data;
       if (data?.url) {
         window.location.href = data.url;
@@ -94,58 +121,93 @@ export const useNativePushNotifications = () => {
     });
   };
 
-  const saveToken = async (deviceToken: string) => {
+  const saveToken = async (deviceToken: string): Promise<boolean> => {
     if (!user) return false;
 
     try {
+      console.log('[PUSH_DEBUG] Saving token for user', user.id, 'token:', deviceToken.substring(0, 10) + '...');
+      
       const { error } = await supabase.from('push_subscriptions').upsert({
         user_id: user.id,
-        endpoint: `apns:${deviceToken}`, // Use a unique identifier
+        endpoint: `apns:${deviceToken}`,
         device_token: deviceToken,
         platform: 'ios',
-        p256dh: '', // Not used for APNs
-        auth: '' // Not used for APNs
+        p256dh: '',
+        auth: ''
       }, {
         onConflict: 'user_id,endpoint,platform'
       });
 
       if (error) {
-        console.error('Error saving device token:', error);
+        console.error('[PUSH_DEBUG] Supabase error saving device token:', error.message, error.details);
+        toast.error('Failed to save push token: ' + error.message);
         return false;
       }
 
       setIsSubscribed(true);
+      console.log('[PUSH_DEBUG] Token saved, isSubscribed = true');
       return true;
     } catch (error) {
-      console.error('Error saving device token:', error);
+      console.error('[PUSH_DEBUG] Exception saving device token:', error);
       return false;
     }
   };
 
   const subscribe = useCallback(async () => {
     if (!user) {
-      console.error('User not authenticated');
+      console.error('[PUSH_DEBUG] subscribe: User not authenticated');
       return false;
     }
 
     try {
-      // Request permission
       const permResult = await PushNotifications.requestPermissions();
+      console.log('[PUSH_DEBUG] requestPermissions result:', permResult.receive);
       
       if (permResult.receive === 'granted') {
         setPermission('granted');
-        
-        // Register for push notifications
         await PushNotifications.register();
-        
+        console.log('[PUSH_DEBUG] PushNotifications.register() called after permission grant');
         return true;
       } else {
         setPermission('denied');
-        console.log('Push notification permission denied');
+        console.log('[PUSH_DEBUG] Push notification permission denied');
         return false;
       }
     } catch (error) {
-      console.error('Error subscribing to push:', error);
+      console.error('[PUSH_DEBUG] Error subscribing to push:', error);
+      return false;
+    }
+  }, [user]);
+
+  const forceRegister = useCallback(async () => {
+    if (!user) {
+      console.error('[PUSH_DEBUG] forceRegister: no user');
+      return false;
+    }
+    
+    console.log('[PUSH_DEBUG] forceRegister called');
+    
+    try {
+      // Check / request permission first
+      const permResult = await PushNotifications.checkPermissions();
+      console.log('[PUSH_DEBUG] forceRegister: current permission:', permResult.receive);
+      
+      if (permResult.receive !== 'granted') {
+        const reqResult = await PushNotifications.requestPermissions();
+        if (reqResult.receive !== 'granted') {
+          console.log('[PUSH_DEBUG] forceRegister: permission not granted');
+          setPermission('denied');
+          return false;
+        }
+        setPermission('granted');
+      }
+      
+      // Register — the 'registration' listener will call saveToken
+      await PushNotifications.register();
+      console.log('[PUSH_DEBUG] forceRegister: register() called');
+      return true;
+    } catch (error) {
+      console.error('[PUSH_DEBUG] forceRegister error:', error);
       return false;
     }
   }, [user]);
@@ -154,7 +216,6 @@ export const useNativePushNotifications = () => {
     if (!user) return false;
 
     try {
-      // Remove from database
       await supabase
         .from('push_subscriptions')
         .delete()
@@ -162,9 +223,10 @@ export const useNativePushNotifications = () => {
         .eq('platform', 'ios');
       
       setIsSubscribed(false);
+      console.log('[PUSH_DEBUG] Unsubscribed, tokens deleted');
       return true;
     } catch (error) {
-      console.error('Error unsubscribing:', error);
+      console.error('[PUSH_DEBUG] Error unsubscribing:', error);
       return false;
     }
   }, [user]);
@@ -174,6 +236,7 @@ export const useNativePushNotifications = () => {
     isSubscribed,
     permission,
     subscribe,
-    unsubscribe
+    unsubscribe,
+    forceRegister
   };
 };

@@ -63,7 +63,7 @@ export default function Settings() {
   const { profile, updateProfile, isUpdating: isUpdatingProfile } = useProfile();
   const { settings, updateSettings, isLoading: settingsLoading, isUpdating: isUpdatingSettings } = useSettings();
   const { archiveAllGoals, isArchivingAll } = useGoals();
-  const { isNative, isSubscribed, permission, subscribe } = useCombinedPushNotifications() as any;
+  const { isNative, isSubscribed, permission, subscribe, forceRegister } = useCombinedPushNotifications() as any;
   
   const [section, setSection] = useState<SettingsSection>('main');
   
@@ -176,6 +176,10 @@ export default function Settings() {
               navigate('/privacy-policy');
             } else {
               setSection(item.id as SettingsSection);
+              if (item.id === 'notifications' && isNative && forceRegister) {
+                console.log('[PUSH_DEBUG] Entering notifications section, calling forceRegister');
+                forceRegister();
+              }
             }
           }}
           className="w-full flex items-center justify-between p-4 bg-card rounded-xl hover:bg-muted/50 transition-colors"
@@ -271,8 +275,9 @@ export default function Settings() {
             checked={settings?.push_notifications_enabled ?? true}
             onCheckedChange={async (checked) => {
               updateSettings({ push_notifications_enabled: checked });
-              if (checked && isNative && !isSubscribed) {
-                const success = await subscribe();
+              if (checked && isNative) {
+                console.log('[PUSH_DEBUG] Toggle ON, calling forceRegister');
+                const success = forceRegister ? await forceRegister() : await subscribe();
                 if (success) {
                   toast.success('Push notifications enabled!');
                 } else if (permission === 'denied') {
