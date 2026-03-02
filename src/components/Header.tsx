@@ -302,6 +302,14 @@ export function Header({ title, rightAction }: HeaderProps) {
             </PopoverContent>
           </Popover>
           <h1 className="text-xl font-bold tracking-tight">{title}</h1>
+          {import.meta.env.MODE === 'development' && (
+            <button
+              onClick={() => { throw new Error("Sentry test error"); }}
+              className="text-[10px] opacity-60 px-2 py-1 bg-destructive text-destructive-foreground rounded cursor-pointer border-none"
+            >
+              Test Sentry
+            </button>
+          )}
         </div>
         {rightAction && <div>{rightAction}</div>}
       </div>

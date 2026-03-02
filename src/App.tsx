@@ -62,18 +62,6 @@ function AppRoutes() {
   );
 }
 
-function SentryTestButton() {
-  if (import.meta.env.MODE !== "development") return null;
-  return (
-    <button
-      onClick={() => { throw new Error("Sentry test error"); }}
-      style={{ position: "fixed", bottom: 8, left: 8, zIndex: 9999, fontSize: 10, opacity: 0.6, padding: "4px 8px", background: "#f87171", color: "#fff", borderRadius: 4, border: "none", cursor: "pointer" }}
-    >
-      Test Sentry
-    </button>
-  );
-}
-
 const App = () => (
   <Sentry.ErrorBoundary fallback={<div className="min-h-screen flex items-center justify-center bg-background text-foreground p-6 text-center"><div><h1 className="text-xl font-semibold mb-2">Something went wrong</h1><p className="text-muted-foreground">Please refresh the page or try again later.</p></div></div>}>
     <QueryClientProvider client={queryClient}>
@@ -84,7 +72,6 @@ const App = () => (
           <BrowserRouter>
             <AppRoutes />
             <PushNotificationPrompt />
-            <SentryTestButton />
           </BrowserRouter>
         </TooltipProvider>
       </AuthProvider>
