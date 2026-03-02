@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/react';
 import { Flame, Loader2, Check, X } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -304,7 +305,11 @@ export function Header({ title, rightAction }: HeaderProps) {
           <h1 className="text-xl font-bold tracking-tight">{title}</h1>
           {import.meta.env.MODE === 'development' && (
             <button
-              onClick={() => { throw new Error("Sentry test error"); }}
+              onClick={() => {
+                const err = new Error("Sentry test error");
+                Sentry.captureException(err);
+                alert("Sentry test error sent! Check your Sentry dashboard.");
+              }}
               className="text-[10px] opacity-60 px-2 py-1 bg-destructive text-destructive-foreground rounded cursor-pointer border-none"
             >
               Test Sentry
