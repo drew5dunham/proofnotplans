@@ -1,4 +1,5 @@
 // App root component
+import * as Sentry from "@sentry/react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -61,19 +62,34 @@ function AppRoutes() {
   );
 }
 
+function SentryTestButton() {
+  if (import.meta.env.MODE !== "development") return null;
+  return (
+    <button
+      onClick={() => { throw new Error("Sentry test error"); }}
+      style={{ position: "fixed", bottom: 8, left: 8, zIndex: 9999, fontSize: 10, opacity: 0.6, padding: "4px 8px", background: "#f87171", color: "#fff", borderRadius: 4, border: "none", cursor: "pointer" }}
+    >
+      Test Sentry
+    </button>
+  );
+}
+
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <AppRoutes />
-          <PushNotificationPrompt />
-        </BrowserRouter>
-      </TooltipProvider>
-    </AuthProvider>
-  </QueryClientProvider>
+  <Sentry.ErrorBoundary fallback={<div className="min-h-screen flex items-center justify-center bg-background text-foreground p-6 text-center"><div><h1 className="text-xl font-semibold mb-2">Something went wrong</h1><p className="text-muted-foreground">Please refresh the page or try again later.</p></div></div>}>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <AppRoutes />
+            <PushNotificationPrompt />
+            <SentryTestButton />
+          </BrowserRouter>
+        </TooltipProvider>
+      </AuthProvider>
+    </QueryClientProvider>
+  </Sentry.ErrorBoundary>
 );
 
 export default App;
