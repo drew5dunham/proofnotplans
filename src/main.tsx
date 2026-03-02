@@ -1,6 +1,9 @@
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
+import { initSentry } from "./lib/sentry";
+
+initSentry();
 
 function syncAppViewportVars() {
   const vv = window.visualViewport;
