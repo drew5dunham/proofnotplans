@@ -156,13 +156,16 @@ async function generateApnsJwt(
   const payloadB64 = base64UrlEncode(new TextEncoder().encode(JSON.stringify(payload)));
   const unsignedToken = `${headerB64}.${payloadB64}`;
 
-  const pemLines = privateKeyPem.split('\n').filter(line => 
+  // Handle PEM keys stored with literal \n (common in env vars)
+  const normalizedPem = privateKeyPem.replace(/\\n/g, '\n');
+  const pemLines = normalizedPem.split('\n').filter(line =>
     !line.includes('-----BEGIN') && !line.includes('-----END') && line.trim()
   );
   const keyBase64 = pemLines.join('');
   const keyData = Uint8Array.from(atob(keyBase64), c => c.charCodeAt(0));
 
   try {
+    console.log('APNs JWT: importing key, keyData length:', keyData.length);
     const cryptoKey = await crypto.subtle.importKey(
       'pkcs8',
       keyData.buffer,
@@ -179,7 +182,7 @@ async function generateApnsJwt(
 
     const sigArray = new Uint8Array(signature);
     let r: Uint8Array, s: Uint8Array;
-    
+
     if (sigArray[0] === 0x30) {
       let offset = 2;
       const rLength = sigArray[offset + 1];
@@ -189,10 +192,10 @@ async function generateApnsJwt(
       const sLength = sigArray[offset + 1];
       offset += 2;
       s = sigArray.slice(offset, offset + sLength);
-      
+
       if (r.length > 32 && r[0] === 0) r = r.slice(1);
       if (s.length > 32 && s[0] === 0) s = s.slice(1);
-      
+
       if (r.length < 32) {
         const padded = new Uint8Array(32);
         padded.set(r, 32 - r.length);
@@ -211,11 +214,11 @@ async function generateApnsJwt(
     const rawSig = new Uint8Array(64);
     rawSig.set(r, 0);
     rawSig.set(s, 32);
-    
+
     const signatureB64 = base64UrlEncode(rawSig);
     return `${unsignedToken}.${signatureB64}`;
   } catch (error) {
-    console.error('Error generating APNs JWT:', error);
+    console.error('Error generating APNs JWT:', error, '— key length was:', keyData.length, 'bytes');
     throw error;
   }
 }
