@@ -13,6 +13,9 @@ export const useNativePushNotifications = () => {
   const listenersAdded = useRef(false);
   // Store the latest token so the debug button can use it
   const latestToken = useRef<string | null>(null);
+  // Keep a ref to the current user so the registration listener always has the latest
+  const userRef = useRef(user);
+  userRef.current = user;
 
   console.log('[PUSH_DEBUG] useNativePushNotifications hook init, user:', user?.id ?? 'none', 'isNative:', Capacitor.isNativePlatform());
 
@@ -99,9 +102,10 @@ export const useNativePushNotifications = () => {
     PushNotifications.addListener('registration', async (token: Token) => {
       console.log('[PUSH_DEBUG] >>> registration listener fired, token:', token.value?.substring(0, 20), '... length:', token.value?.length);
       latestToken.current = token.value;
-      
-      if (user) {
-        console.log('[PUSH_DEBUG] registration listener: user present, calling saveToken for user', user.id);
+
+      const currentUser = userRef.current;
+      if (currentUser) {
+        console.log('[PUSH_DEBUG] registration listener: user present, calling saveToken for user', currentUser.id);
         const saved = await saveToken(token.value);
         console.log('[PUSH_DEBUG] registration listener: saveToken returned', saved);
         if (!saved) {
@@ -135,13 +139,14 @@ export const useNativePushNotifications = () => {
   };
 
   const saveToken = async (deviceToken: string): Promise<boolean> => {
-    if (!user) {
+    const currentUser = userRef.current;
+    if (!currentUser) {
       console.error('[PUSH_DEBUG] saveToken: no user');
       return false;
     }
 
     try {
-      console.log('[PUSH_DEBUG] saveToken: invoking edge function register-ios-push-token, user:', user.id, 'token prefix:', deviceToken.substring(0, 12));
+      console.log('[PUSH_DEBUG] saveToken: invoking edge function register-ios-push-token, user:', currentUser.id, 'token prefix:', deviceToken.substring(0, 12));
       
       const { data, error } = await supabase.functions.invoke('register-ios-push-token', {
         body: { token: deviceToken },
