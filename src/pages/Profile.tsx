@@ -29,24 +29,18 @@ export default function Profile() {
   const isLoading = goalsLoading || completionsLoading || profileLoading;
   const totalCompleted = completions?.length || 0;
   
-  // Calculate streak (consecutive days with completions)
   const calculateStreak = () => {
     if (!completions || completions.length === 0) return 0;
-    
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
     const completionDates = completions.map(c => {
       const date = new Date(c.completed_at);
       date.setHours(0, 0, 0, 0);
       return date.getTime();
     });
-    
     const uniqueDates = [...new Set(completionDates)].sort((a, b) => b - a);
-    
     let streak = 0;
     let currentDate = today.getTime();
-    
     for (const date of uniqueDates) {
       if (date === currentDate || date === currentDate - 86400000) {
         streak++;
@@ -55,7 +49,6 @@ export default function Profile() {
         break;
       }
     }
-    
     return streak;
   };
 
@@ -63,19 +56,27 @@ export default function Profile() {
   const userName = profile?.name || user?.user_metadata?.name || user?.email?.split('@')[0] || 'User';
 
   return (
-    <div className="min-h-screen bg-background" style={{ paddingBottom: 'calc(7rem + env(safe-area-inset-bottom, 0px))' }}>
-      <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-xl border-b border-border/50 px-4 py-4">
+    <div className="min-h-screen bg-background" style={{ paddingBottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))' }}>
+      <header 
+        className="sticky top-0 z-30 border-b border-border/30 px-4 py-4"
+        style={{
+          paddingTop: 'env(safe-area-inset-top, 0px)',
+          backgroundColor: 'hsl(0 0% 5% / 0.85)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+        }}
+      >
         <div className="max-w-md mx-auto flex items-center justify-between">
-          <h1 className="text-xl font-bold tracking-tight">Profile</h1>
+          <h1 className="text-2xl font-display font-bold tracking-tight">Profile</h1>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="rounded-full" onClick={() => navigate('/settings')}>
+            <Button variant="ghost" size="icon" className="rounded-full hover:bg-card" onClick={() => navigate('/settings')}>
               <Settings size={20} />
             </Button>
             <Button 
               variant="ghost" 
               size="icon" 
               onClick={signOut}
-              className="rounded-full text-muted-foreground hover:text-foreground"
+              className="rounded-full text-muted-foreground hover:text-foreground hover:bg-card"
             >
               <LogOut size={20} />
             </Button>
@@ -93,7 +94,7 @@ export default function Profile() {
               editable={true}
             />
             <div>
-              <h2 className="text-2xl font-bold">{userName} 👋</h2>
+              <h2 className="text-3xl font-display font-extrabold tracking-tight">{userName}</h2>
               <p className="text-sm text-muted-foreground">{user?.email}</p>
             </div>
           </div>
@@ -111,10 +112,10 @@ export default function Profile() {
                 transition={{ delay: 0.1 }}
                 className="stat-block"
               >
-                <div className="flex items-center gap-1 text-orange-400 mb-1">
+                <div className="flex items-center gap-1 text-primary mb-1">
                   <Flame size={18} />
                 </div>
-                <span className="text-2xl font-bold">{streak}</span>
+                <span className="text-2xl font-display font-extrabold">{streak}</span>
                 <span className="text-xs text-muted-foreground">streak</span>
               </motion.div>
 
@@ -128,7 +129,7 @@ export default function Profile() {
                 <div className="flex items-center gap-1 text-primary mb-1">
                   <Target size={18} />
                 </div>
-                <span className="text-2xl font-bold">{goalsWithStats.length}</span>
+                <span className="text-2xl font-display font-extrabold">{goalsWithStats.length}</span>
                 <span className="text-xs text-muted-foreground">goals</span>
               </motion.button>
 
@@ -141,7 +142,7 @@ export default function Profile() {
                 <div className="flex items-center gap-1 text-success mb-1">
                   <Check size={18} />
                 </div>
-                <span className="text-2xl font-bold">{totalCompleted}</span>
+                <span className="text-2xl font-display font-extrabold">{totalCompleted}</span>
                 <span className="text-xs text-muted-foreground">done</span>
               </motion.div>
 
@@ -174,7 +175,7 @@ export default function Profile() {
               onActivityClick={() => setActivityModalOpen(true)}
             />
           ) : (
-            <div className="py-12 text-center bg-card rounded-2xl">
+            <div className="py-12 text-center bg-card rounded-2xl border border-border/50">
               <p className="text-muted-foreground">No goals yet.</p>
               <p className="text-sm text-muted-foreground mt-1">
                 Add goals to start tracking.
@@ -188,10 +189,10 @@ export default function Profile() {
           <div className="px-4 pb-4">
             <Collapsible open={pastGoalsOpen} onOpenChange={setPastGoalsOpen}>
               <CollapsibleTrigger asChild>
-                <button className="w-full flex items-center justify-between p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
+                <button className="w-full flex items-center justify-between p-3 bg-card border border-border/50 rounded-2xl hover:bg-muted/50 transition-colors">
                   <div className="flex items-center gap-2">
                     <Archive size={16} className="text-muted-foreground" />
-                    <span className="text-sm font-medium">Past Goals</span>
+                    <span className="text-sm font-display font-bold">Past Goals</span>
                     <span className="text-xs text-muted-foreground">({inactiveGoalsWithStats.length})</span>
                   </div>
                   <ChevronDown 

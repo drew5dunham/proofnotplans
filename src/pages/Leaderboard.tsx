@@ -30,11 +30,11 @@ function LeaderboardSection({ title, icon: Icon, data, isLoading }: LeaderboardS
       <section className="mb-6">
         <div className="flex items-center gap-2 mb-3 px-4">
           <Icon size={16} className="text-primary" />
-          <h2 className="font-semibold text-sm">{title}</h2>
+          <h2 className="font-display font-bold text-sm">{title}</h2>
         </div>
         <div className="space-y-2 px-4">
           {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-16 w-full rounded-xl" />
+            <Skeleton key={i} className="h-16 w-full rounded-2xl" />
           ))}
         </div>
       </section>
@@ -46,10 +46,10 @@ function LeaderboardSection({ title, icon: Icon, data, isLoading }: LeaderboardS
       <section className="mb-6">
         <div className="flex items-center gap-2 mb-3 px-4">
           <Icon size={16} className="text-primary" />
-          <h2 className="font-semibold text-sm">{title}</h2>
+          <h2 className="font-display font-bold text-sm">{title}</h2>
         </div>
         <div className="px-4">
-          <div className="bg-card rounded-xl p-6 text-center">
+          <div className="bg-card rounded-2xl border border-border/50 p-6 text-center">
             <Users className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
             <p className="text-sm text-muted-foreground">
               Add friends to see the leaderboard!
@@ -64,7 +64,7 @@ function LeaderboardSection({ title, icon: Icon, data, isLoading }: LeaderboardS
     <section className="mb-6">
       <div className="flex items-center gap-2 mb-3 px-4">
         <Icon size={16} className="text-primary" />
-        <h2 className="font-semibold text-sm">{title}</h2>
+        <h2 className="font-display font-bold text-sm">{title}</h2>
       </div>
 
       <div className="space-y-2 px-4">
@@ -74,19 +74,21 @@ function LeaderboardSection({ title, icon: Icon, data, isLoading }: LeaderboardS
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: index * 0.05 }}
-            className={`flex items-center gap-3 p-3 rounded-xl ${
-              item.isYou ? 'bg-primary/10 border border-primary/30' : 'bg-card'
+            className={`flex items-center gap-3 p-3 rounded-2xl border ${
+              item.isYou 
+                ? 'bg-primary/8 border-primary/25' 
+                : 'bg-card border-border/50'
             }`}
           >
-            <span className="w-6 text-sm font-medium text-muted-foreground">
+            <span className="w-6 text-sm font-display font-bold text-muted-foreground">
               {index + 1}
             </span>
             <UserAvatar name={item.name} avatarUrl={item.avatarUrl} size="sm" />
             <div className="flex-1">
-              <p className="text-sm font-medium">{item.name}</p>
+              <p className="text-sm font-display font-bold">{item.name}</p>
               <p className="text-xs text-muted-foreground">{item.subtitle}</p>
             </div>
-            <span className="font-semibold text-sm text-primary">{item.score}</span>
+            <span className="font-display font-extrabold text-sm text-primary">{item.score}</span>
           </motion.div>
         ))}
       </div>
@@ -98,7 +100,7 @@ export default function Leaderboard() {
   const { data, isLoading } = useLeaderboard();
 
   return (
-    <div className="min-h-screen bg-background" style={{ paddingBottom: 'calc(7rem + env(safe-area-inset-bottom, 0px))' }}>
+    <div className="min-h-screen bg-background" style={{ paddingBottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))' }}>
       <Header title="This Week" />
 
       <main className="max-w-md mx-auto py-4 px-4">

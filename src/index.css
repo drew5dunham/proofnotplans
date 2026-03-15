@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,45 +6,45 @@
 
 @layer base {
   :root {
-    /* Dark navy/slate background */
-    --background: 225 25% 12%;
-    --foreground: 210 20% 98%;
+    /* Near-black backgrounds inspired by reference */
+    --background: 0 0% 5%;
+    --foreground: 0 0% 95%;
 
-    /* Cards - slightly lighter than background */
-    --card: 225 22% 16%;
-    --card-foreground: 210 20% 98%;
+    /* Cards - subtle lift from background */
+    --card: 0 0% 9%;
+    --card-foreground: 0 0% 95%;
 
-    --popover: 225 22% 16%;
-    --popover-foreground: 210 20% 98%;
+    --popover: 0 0% 9%;
+    --popover-foreground: 0 0% 95%;
 
-    /* Primary - bright blue accent */
-    --primary: 217 91% 60%;
-    --primary-foreground: 210 20% 98%;
+    /* Primary - warm coral/orange accent */
+    --primary: 12 90% 55%;
+    --primary-foreground: 0 0% 100%;
 
-    /* Secondary - muted dark */
-    --secondary: 225 20% 22%;
-    --secondary-foreground: 210 20% 85%;
+    /* Secondary - subtle dark surface */
+    --secondary: 0 0% 13%;
+    --secondary-foreground: 0 0% 70%;
 
     /* Muted tones */
-    --muted: 225 18% 20%;
-    --muted-foreground: 215 15% 55%;
+    --muted: 0 0% 12%;
+    --muted-foreground: 0 0% 45%;
 
-    /* Accent - cyan/teal */
-    --accent: 190 80% 50%;
-    --accent-foreground: 210 20% 98%;
+    /* Accent - warm coral glow */
+    --accent: 16 85% 58%;
+    --accent-foreground: 0 0% 100%;
 
-    /* Success state - green */
+    /* Success state */
     --success: 152 55% 50%;
-    --success-foreground: 210 20% 98%;
+    --success-foreground: 0 0% 100%;
 
-    --destructive: 0 70% 55%;
-    --destructive-foreground: 210 20% 98%;
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 225 15% 25%;
-    --input: 225 15% 22%;
-    --ring: 217 91% 60%;
+    --border: 0 0% 14%;
+    --input: 0 0% 12%;
+    --ring: 12 90% 55%;
 
-    --radius: 0.75rem;
+    --radius: 0.875rem;
   }
 }
 
@@ -57,7 +57,7 @@
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    background-color: hsl(225 25% 12%);
+    background-color: hsl(0 0% 5%);
   }
 
   html {
@@ -84,7 +84,6 @@
     background-color: hsl(var(--background));
   }
 
-  /* Hide iOS input accessory bar */
   input::-webkit-input-placeholder {
     color: hsl(var(--muted-foreground));
   }
@@ -92,15 +91,15 @@
 
 @layer components {
   .feed-post {
-    @apply bg-card rounded-2xl p-4 mb-4;
+    @apply bg-card rounded-2xl p-5 mb-4 border border-border/50;
   }
 
   .stat-block {
-    @apply flex flex-col items-center justify-center p-4 bg-card rounded-xl;
+    @apply flex flex-col items-center justify-center p-4 bg-card rounded-2xl border border-border/50;
   }
 
   .category-badge {
-    @apply inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium bg-primary/20 text-primary rounded-full;
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium bg-primary/15 text-primary rounded-full;
   }
 
   .timestamp {
@@ -108,15 +107,29 @@
   }
 
   .goal-card {
-    @apply p-4 bg-card rounded-2xl;
+    @apply p-5 bg-card rounded-2xl border border-border/50;
   }
 
   .completion-badge {
-    @apply inline-flex items-center gap-1.5 px-3 py-1.5 bg-success/20 text-success text-xs font-semibold rounded-full;
+    @apply inline-flex items-center gap-1.5 px-3 py-1.5 bg-success/15 text-success text-xs font-semibold rounded-full;
   }
   
   .completion-badge-missed {
-    @apply inline-flex items-center gap-1.5 px-3 py-1.5 bg-destructive/20 text-destructive text-xs font-semibold rounded-full;
+    @apply inline-flex items-center gap-1.5 px-3 py-1.5 bg-destructive/15 text-destructive text-xs font-semibold rounded-full;
+  }
+
+  /* Display heading style */
+  .heading-display {
+    font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 1.1;
+  }
+
+  .heading-bold {
+    font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.03em;
   }
 }
 
