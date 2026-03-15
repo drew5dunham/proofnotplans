@@ -36,27 +36,20 @@ export function Header({ title, rightAction }: HeaderProps) {
   const acceptFriendRequest = useAcceptFriendRequest();
   const ignoreFriendRequest = useIgnoreFriendRequest();
 
-  // Check for openNotification query param from push notification clicks
   useEffect(() => {
     const openNotificationId = searchParams.get('openNotification');
     if (openNotificationId) {
       setPopoverOpen(true);
       setHighlightedNotifId(openNotificationId);
-      
-      // Remove the query param from URL
       searchParams.delete('openNotification');
       setSearchParams(searchParams, { replace: true });
-      
-      // Clear highlight after a delay
       const timer = setTimeout(() => {
         setHighlightedNotifId(null);
       }, 3000);
-      
       return () => clearTimeout(timer);
     }
   }, [searchParams, setSearchParams]);
 
-  // Scroll to highlighted notification
   useEffect(() => {
     if (highlightedNotifId && highlightedRef.current && popoverOpen) {
       setTimeout(() => {
@@ -66,15 +59,10 @@ export function Header({ title, rightAction }: HeaderProps) {
   }, [highlightedNotifId, popoverOpen]);
 
   const handleNotificationClick = (notif: any) => {
-    // Don't navigate for friend requests - they have action buttons
     if (notif.type === 'friend_request') return;
-    
-    // Mark as read
     if (!notif.read_at) {
       markNotificationRead.mutate(notif.id);
     }
-    
-    // Navigate based on notification type
     if (notif.reference_id) {
       setPopoverOpen(false);
       if (notif.type === 'group_invite') {
@@ -131,15 +119,20 @@ export function Header({ title, rightAction }: HeaderProps) {
 
   return (
     <header
-      className="sticky top-0 z-30 bg-background border-b border-border/50"
-      style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+      className="sticky top-0 z-30 border-b border-border/30"
+      style={{ 
+        paddingTop: 'env(safe-area-inset-top, 0px)',
+        backgroundColor: 'hsl(0 0% 5% / 0.85)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+      }}
     >
       <div className="max-w-md mx-auto px-4 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
             <PopoverTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-10 w-10 relative rounded-full bg-card hover:bg-muted">
-                <Flame size={20} className="text-orange-400" />
+              <Button variant="ghost" size="icon" className="h-10 w-10 relative rounded-full hover:bg-card">
+                <Flame size={20} className="text-primary" />
                 {totalUnread > 0 && (
                   <span className="absolute -top-0.5 -right-0.5 h-5 w-5 bg-primary text-primary-foreground text-[10px] font-bold rounded-full flex items-center justify-center">
                     {totalUnread > 9 ? '9+' : totalUnread}
@@ -149,7 +142,7 @@ export function Header({ title, rightAction }: HeaderProps) {
             </PopoverTrigger>
             <PopoverContent align="start" className="w-80 p-0 bg-card border-border rounded-2xl">
               <div className="p-4 border-b border-border">
-                <h3 className="font-semibold">Notifications</h3>
+                <h3 className="font-display font-bold">Notifications</h3>
               </div>
               <div className="max-h-80 overflow-y-auto">
                 {isLoading ? (
@@ -159,15 +152,13 @@ export function Header({ title, rightAction }: HeaderProps) {
                 ) : (
                   <div className="p-3 space-y-2">
                     {(() => {
-                      // Combine all items with a unified structure for sorting
                       const allItems: Array<{
                         id: string;
-                        type: 'notification' | 'conversation' | 'sample';
+                        type: 'notification' | 'conversation';
                         created_at: string;
                         data: any;
                       }> = [];
 
-                      // Add notifications
                       if (notifications) {
                         notifications.forEach((notif: any) => {
                           allItems.push({
@@ -179,7 +170,6 @@ export function Header({ title, rightAction }: HeaderProps) {
                         });
                       }
 
-                      // Add conversations with unread messages
                       if (conversations) {
                         conversations.filter(c => c.unreadCount > 0).forEach((conv) => {
                           allItems.push({
@@ -191,7 +181,6 @@ export function Header({ title, rightAction }: HeaderProps) {
                         });
                       }
 
-                      // Sort by created_at descending (most recent first)
                       allItems.sort((a, b) => 
                         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
                       );
@@ -223,7 +212,6 @@ export function Header({ title, rightAction }: HeaderProps) {
                                 isHighlighted ? 'ring-2 ring-primary animate-pulse' : ''
                               }`}
                             >
-                              {/* Delete button */}
                               <button
                                 onClick={(e) => handleDeleteNotification(e, notif.id)}
                                 className="absolute top-2 right-2 p-1 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
@@ -237,7 +225,6 @@ export function Header({ title, rightAction }: HeaderProps) {
                                 <p className="text-muted-foreground text-sm mt-0.5 truncate pr-6">"{notif.body}"</p>
                               )}
                               
-                              {/* Friend request action buttons */}
                               {isFriendRequest && (
                                 <div className="flex gap-2 mt-2">
                                   <Button
@@ -302,7 +289,7 @@ export function Header({ title, rightAction }: HeaderProps) {
               </div>
             </PopoverContent>
           </Popover>
-          <h1 className="text-xl font-bold tracking-tight">{title}</h1>
+          <h1 className="text-2xl font-display font-bold tracking-tight">{title}</h1>
           {import.meta.env.MODE === 'development' && (
             <button
               onClick={() => {

@@ -36,10 +36,8 @@ export default function Feed() {
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [membersOpen, setMembersOpen] = useState(false);
 
-  // Clear the post param after initial load to clean up URL
   useEffect(() => {
     if (highlightPostId && !loadingFeed) {
-      // Wait a bit for scroll/highlight, then clear URL param
       const timeout = setTimeout(() => {
         setSearchParams({}, { replace: true });
       }, 2000);
@@ -47,21 +45,17 @@ export default function Feed() {
     }
   }, [highlightPostId, loadingFeed, setSearchParams]);
 
-  // Get selected group details
   const selectedGroup = selectedGroupId 
     ? groups.find(g => g.id === selectedGroupId) 
     : null;
 
-  // Fetch group-specific feed when a group is selected
   const { data: groupFeed, isLoading: loadingGroupFeed } = useQuery({
     queryKey: ['group-feed', selectedGroupId, selectedGroup?.category, selectedGroup?.members?.map(m => m.user_id)],
     queryFn: async (): Promise<DbCompletion[]> => {
       if (!selectedGroup) return [];
-      
       const memberIds = selectedGroup.members.map(m => m.user_id);
       if (memberIds.length === 0) return [];
 
-      // Get public goals in this category for group members
       const { data: goalsData, error: goalsError } = await supabase
         .from('goals')
         .select('id, user_id, name, category, visibility, is_active, created_at')
@@ -74,7 +68,6 @@ export default function Feed() {
 
       const goalIds = goalsData.map(g => g.id);
 
-      // Get completions for those goals
       const { data: completions, error: completionsError } = await supabase
         .from('goal_completions')
         .select('*')
@@ -84,7 +77,6 @@ export default function Feed() {
 
       if (completionsError) throw completionsError;
 
-      // Map goals and fetch profiles
       const userIds = [...new Set(completions?.map(c => c.user_id) || [])];
       const { data: profiles } = await supabase
         .from('profiles')
@@ -104,21 +96,18 @@ export default function Feed() {
     enabled: !!selectedGroupId && !!selectedGroup,
   });
 
-  // Check if user has reported today
   const hasReportedToday = myCompletions?.some(
     (c) => isToday(new Date(c.completed_at))
   );
 
   const hasGoals = goals && goals.length > 0;
-
-  // Use group feed when a group is selected, otherwise use main feed
   const filteredPosts = selectedGroupId ? groupFeed : feedPosts;
   const isLoading = selectedGroupId ? loadingGroupFeed : loadingFeed;
 
   const headerRightAction = user && hasGoals ? (
     <ReportGoalDialog 
       trigger={
-        <Button size="sm" className="h-9 rounded-full px-4">
+        <Button size="sm" className="h-9 rounded-full px-4 font-display font-bold">
           <Plus size={16} className="mr-1.5" />
           Report
         </Button>
@@ -127,7 +116,7 @@ export default function Feed() {
   ) : null;
 
   return (
-    <div className="min-h-screen bg-background pb-28" style={{ paddingBottom: 'calc(7rem + env(safe-area-inset-bottom, 0px))' }}>
+    <div className="min-h-screen bg-background pb-28" style={{ paddingBottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))' }}>
       <Header title="Feed" rightAction={headerRightAction} />
       
       <main className="max-w-md mx-auto px-4">
@@ -146,15 +135,15 @@ export default function Feed() {
           )}
         </div>
 
-        {/* Report prompt for users who haven't posted today */}
+        {/* Report prompt */}
         {user && !hasReportedToday && (
-          <div className="mb-4 p-4 bg-primary/10 rounded-2xl">
+          <div className="mb-4 p-5 bg-primary/8 border border-primary/20 rounded-2xl">
             <div className="flex items-start gap-3">
-              <div className="p-2 bg-primary/20 text-primary rounded-xl">
+              <div className="p-2.5 bg-primary/15 text-primary rounded-xl">
                 <Target size={20} />
               </div>
               <div className="flex-1">
-                <p className="font-semibold text-foreground text-sm">
+                <p className="font-display font-bold text-foreground text-sm">
                   Report on your goal to post
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5">
@@ -163,14 +152,14 @@ export default function Feed() {
                 {hasGoals ? (
                   <ReportGoalDialog 
                     trigger={
-                      <Button size="sm" className="mt-3 rounded-full">
+                      <Button size="sm" className="mt-3 rounded-full font-display font-bold">
                         <Plus size={16} className="mr-1.5" />
                         Report Now
                       </Button>
                     }
                   />
                 ) : (
-                  <Button asChild size="sm" className="mt-3 rounded-full">
+                  <Button asChild size="sm" className="mt-3 rounded-full font-display font-bold">
                     <Link to="/goals?add=true">Add Goals First</Link>
                   </Button>
                 )}
@@ -200,7 +189,7 @@ export default function Feed() {
             ))}
 
             {(!filteredPosts || filteredPosts.length === 0) && (
-              <div className="py-12 text-center bg-card rounded-2xl">
+              <div className="py-12 text-center bg-card rounded-2xl border border-border/50">
                 <p className="text-muted-foreground">
                   {selectedGroupId ? 'No posts in this group yet.' : 'No posts yet.'}
                 </p>
@@ -220,7 +209,7 @@ export default function Feed() {
       <Dialog open={membersOpen} onOpenChange={setMembersOpen}>
         <DialogContent className="max-w-[360px] rounded-2xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-2 font-display">
               <Users size={18} />
               {selectedGroup?.name} Members
             </DialogTitle>

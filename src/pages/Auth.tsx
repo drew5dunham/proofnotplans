@@ -33,13 +33,11 @@ export default function Auth() {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Don't redirect if in reset mode - user needs to set new password
     if (!loading && user && mode !== 'reset') {
       navigate('/');
     }
   }, [user, loading, navigate, mode]);
 
-  // Update mode when URL changes (for password reset link)
   useEffect(() => {
     if (searchParams.get('mode') === 'reset') {
       setMode('reset');
@@ -83,72 +81,41 @@ export default function Auth() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!validateForm()) return;
-    
     setIsLoading(true);
 
     try {
       if (mode === 'forgot') {
         const { error } = await resetPasswordForEmail(email);
         if (error) {
-          toast({
-            title: 'Error',
-            description: error.message,
-            variant: 'destructive',
-          });
+          toast({ title: 'Error', description: error.message, variant: 'destructive' });
         } else {
-          toast({
-            title: 'Check your email',
-            description: 'We sent you a password reset link.',
-          });
+          toast({ title: 'Check your email', description: 'We sent you a password reset link.' });
           setMode('signin');
         }
       } else if (mode === 'reset') {
         const { error } = await updatePassword(password);
         if (error) {
-          toast({
-            title: 'Error',
-            description: error.message,
-            variant: 'destructive',
-          });
+          toast({ title: 'Error', description: error.message, variant: 'destructive' });
         } else {
-          toast({
-            title: 'Password updated',
-            description: 'You can now sign in with your new password.',
-          });
+          toast({ title: 'Password updated', description: 'You can now sign in with your new password.' });
           navigate('/');
         }
       } else if (mode === 'signup') {
         const { error } = await signUp(email, password, name);
         if (error) {
           if (error.message.includes('already registered')) {
-            toast({
-              title: 'Account exists',
-              description: 'This email is already registered. Try signing in.',
-              variant: 'destructive',
-            });
+            toast({ title: 'Account exists', description: 'This email is already registered. Try signing in.', variant: 'destructive' });
           } else {
-            toast({
-              title: 'Sign up failed',
-              description: error.message,
-              variant: 'destructive',
-            });
+            toast({ title: 'Sign up failed', description: error.message, variant: 'destructive' });
           }
         } else {
-          toast({
-            title: 'Welcome!',
-            description: 'Account created successfully.',
-          });
+          toast({ title: 'Welcome!', description: 'Account created successfully.' });
         }
       } else {
         const { error } = await signIn(email, password);
         if (error) {
-          toast({
-            title: 'Sign in failed',
-            description: 'Invalid email or password.',
-            variant: 'destructive',
-          });
+          toast({ title: 'Sign in failed', description: 'Invalid email or password.', variant: 'destructive' });
         }
       }
     } finally {
@@ -192,10 +159,7 @@ export default function Auth() {
         {(mode === 'forgot' || mode === 'reset') && (
           <button
             type="button"
-            onClick={() => {
-              setMode('signin');
-              setErrors({});
-            }}
+            onClick={() => { setMode('signin'); setErrors({}); }}
             className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -203,12 +167,16 @@ export default function Auth() {
           </button>
         )}
 
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-gradient-to-br from-primary to-accent rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <span className="text-2xl font-bold text-white">p</span>
-          </div>
-          <h1 className="text-3xl font-bold tracking-tight">proof.</h1>
-          <p className="text-muted-foreground text-sm mt-2">
+        <div className="text-center mb-10">
+          <motion.h1 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="text-5xl font-display font-extrabold tracking-tighter text-primary"
+          >
+            proof.
+          </motion.h1>
+          <p className="text-muted-foreground text-sm mt-3">
             {getTitle()}
           </p>
         </div>
@@ -221,11 +189,9 @@ export default function Auth() {
                 placeholder="Your name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className={`h-12 rounded-xl bg-card border-border ${errors.name ? 'border-destructive' : ''}`}
+                className={`h-12 rounded-xl bg-card border-border/50 ${errors.name ? 'border-destructive' : ''}`}
               />
-              {errors.name && (
-                <p className="text-destructive text-xs mt-1">{errors.name}</p>
-              )}
+              {errors.name && <p className="text-destructive text-xs mt-1">{errors.name}</p>}
             </div>
           )}
           
@@ -236,11 +202,9 @@ export default function Auth() {
                 placeholder="Email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className={`h-12 rounded-xl bg-card border-border ${errors.email ? 'border-destructive' : ''}`}
+                className={`h-12 rounded-xl bg-card border-border/50 ${errors.email ? 'border-destructive' : ''}`}
               />
-              {errors.email && (
-                <p className="text-destructive text-xs mt-1">{errors.email}</p>
-              )}
+              {errors.email && <p className="text-destructive text-xs mt-1">{errors.email}</p>}
             </div>
           )}
           
@@ -251,11 +215,9 @@ export default function Auth() {
                 placeholder={mode === 'reset' ? 'New password' : 'Password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className={`h-12 rounded-xl bg-card border-border ${errors.password ? 'border-destructive' : ''}`}
+                className={`h-12 rounded-xl bg-card border-border/50 ${errors.password ? 'border-destructive' : ''}`}
               />
-              {errors.password && (
-                <p className="text-destructive text-xs mt-1">{errors.password}</p>
-              )}
+              {errors.password && <p className="text-destructive text-xs mt-1">{errors.password}</p>}
             </div>
           )}
 
@@ -266,20 +228,14 @@ export default function Auth() {
                 placeholder="Confirm new password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className={`h-12 rounded-xl bg-card border-border ${errors.confirmPassword ? 'border-destructive' : ''}`}
+                className={`h-12 rounded-xl bg-card border-border/50 ${errors.confirmPassword ? 'border-destructive' : ''}`}
               />
-              {errors.confirmPassword && (
-                <p className="text-destructive text-xs mt-1">{errors.confirmPassword}</p>
-              )}
+              {errors.confirmPassword && <p className="text-destructive text-xs mt-1">{errors.confirmPassword}</p>}
             </div>
           )}
 
-          <Button type="submit" className="w-full h-12 rounded-xl text-base" disabled={isLoading}>
-            {isLoading ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : (
-              getButtonText()
-            )}
+          <Button type="submit" className="w-full h-12 rounded-xl text-base font-display font-bold" disabled={isLoading}>
+            {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : getButtonText()}
           </Button>
         </form>
 
@@ -287,10 +243,7 @@ export default function Auth() {
           <div className="mt-4 text-center">
             <button
               type="button"
-              onClick={() => {
-                setMode('forgot');
-                setErrors({});
-              }}
+              onClick={() => { setMode('forgot'); setErrors({}); }}
               className="text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               Forgot password?
@@ -302,10 +255,7 @@ export default function Auth() {
           <div className="mt-4 text-center">
             <button
               type="button"
-              onClick={() => {
-                setMode(mode === 'signin' ? 'signup' : 'signin');
-                setErrors({});
-              }}
+              onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setErrors({}); }}
               className="text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               {mode === 'signup' ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
